@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "url": "https://www.metaincognita.com/",
   "host": "www.metaincognita.com",
-  "started_at_unix": 1794681937,
+  "started_at_unix": 1794682106,
   "vantage": {
     "ipv4": true,
     "ipv6": true
@@ -80,20 +80,20 @@
           "status": 200
         },
         {
-          "url": "https://plausible.io/api/event",
-          "host": "plausible.io",
-          "kind": "fetch",
-          "document": false,
-          "result": "loaded",
-          "status": 202
-        },
-        {
           "url": "https://metaincognita.com/favicon.svg",
           "host": "metaincognita.com",
           "kind": "other",
           "document": false,
           "result": "loaded",
           "status": 200
+        },
+        {
+          "url": "https://plausible.io/api/event",
+          "host": "plausible.io",
+          "kind": "fetch",
+          "document": false,
+          "result": "loaded",
+          "status": 202
         },
         {
           "url": "https://metaincognita.com/_nuxt/builds/meta/f60c3a01-2d77-4a9f-abb8-d5e97b8cbaac.json",
@@ -112,7 +112,7 @@
           "result": "connected",
           "address": "2600:1f18:16e:df01::258",
           "family": "ipv6",
-          "ms": 33
+          "ms": 35
         },
         {
           "host": "www.metaincognita.com",
@@ -121,7 +121,7 @@
           "result": "connected",
           "address": "2600:1f18:16e:df01::258",
           "family": "ipv6",
-          "ms": 36
+          "ms": 37
         },
         {
           "host": "metaincognita.com",
@@ -130,7 +130,7 @@
           "result": "connected",
           "address": "75.2.60.5",
           "family": "ipv4",
-          "ms": 14
+          "ms": 12
         },
         {
           "host": "clients2.google.com",
@@ -157,6 +157,14 @@
           "message": "the page did not ask for www.google.com"
         },
         {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
           "host": "accounts.google.com",
           "port": 443,
           "tunnel": true,
@@ -165,29 +173,13 @@
           "message": "the page did not ask for accounts.google.com"
         },
         {
-          "host": "www.google.com",
-          "port": 443,
-          "tunnel": true,
-          "result": "refused",
-          "reason": "not_asked_by_page",
-          "message": "the page did not ask for www.google.com"
-        },
-        {
           "host": "plausible.io",
           "port": 443,
           "tunnel": true,
           "result": "connected",
-          "address": "2400:52e0:1a00::1070:1",
+          "address": "2400:52e0:1a00::1235:1",
           "family": "ipv6",
-          "ms": 18
-        },
-        {
-          "host": "www.google.com",
-          "port": 443,
-          "tunnel": true,
-          "result": "refused",
-          "reason": "not_asked_by_page",
-          "message": "the page did not ask for www.google.com"
+          "ms": 20
         },
         {
           "host": "accounts.google.com",
@@ -236,7 +228,7 @@
           "result": "connected",
           "address": "2600:1f18:16e:df01::258",
           "family": "ipv6",
-          "ms": 34
+          "ms": 29
         },
         {
           "host": "www.metaincognita.com",
@@ -245,7 +237,7 @@
           "result": "connected",
           "address": "2600:1f18:16e:df01::258",
           "family": "ipv6",
-          "ms": 37
+          "ms": 32
         },
         {
           "host": "metaincognita.com",
@@ -335,7 +327,7 @@
       "check_id": "PGE-01",
       "severity": "critical",
       "name": "metaincognita.com",
-      "summary": "the page cannot be loaded on an IPv6-only network: https://www.metaincognita.com/ redirects to https://metaincognita.com/, and metaincognita.com has no IPv6 address",
+      "summary": "the page cannot be loaded on an IPv6-only network: it redirects to https://metaincognita.com/, and metaincognita.com has no IPv6 address",
       "meaning": "A visitor on an IPv6-only network with no translator does not get the page at all. One whose network has a NAT64 translator, as many mobile networks do, still does, as long as the page is asked for by name.",
       "fix": "Give the page's host an IPv6 address, and every host it redirects through as well. If the address is there and the page still fails, the server does not answer over IPv6: see what `v6blick check` says about the host.",
       "evidence": {

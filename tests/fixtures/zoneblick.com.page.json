@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "url": "https://zoneblick.com/",
   "host": "zoneblick.com",
-  "started_at_unix": 1794681945,
+  "started_at_unix": 1794682113,
   "vantage": {
     "ipv4": true,
     "ipv6": true
@@ -80,7 +80,7 @@
           "result": "connected",
           "address": "2606:50c0:8000::153",
           "family": "ipv6",
-          "ms": 13
+          "ms": 16
         },
         {
           "host": "fonts.googleapis.com",
@@ -89,7 +89,7 @@
           "result": "connected",
           "address": "2607:f8b0:4023:140d::5f",
           "family": "ipv6",
-          "ms": 38
+          "ms": 34
         },
         {
           "host": "clients2.google.com",
@@ -136,9 +136,9 @@
           "port": 443,
           "tunnel": true,
           "result": "connected",
-          "address": "2400:52e0:1a00::1348:1",
+          "address": "2400:52e0:1a00::1235:1",
           "family": "ipv6",
-          "ms": 14
+          "ms": 18
         },
         {
           "host": "fonts.gstatic.com",
@@ -147,7 +147,7 @@
           "result": "connected",
           "address": "2607:f8b0:4009:81e::2003",
           "family": "ipv6",
-          "ms": 12
+          "ms": 10
         },
         {
           "host": "fonts.gstatic.com",
@@ -221,7 +221,7 @@
           "result": "connected",
           "address": "2606:50c0:8000::153",
           "family": "ipv6",
-          "ms": 16
+          "ms": 13
         },
         {
           "host": "zoneblick.com",
@@ -237,9 +237,9 @@
           "port": 443,
           "tunnel": true,
           "result": "connected",
-          "address": "2400:52e0:1a00::1348:1",
+          "address": "2400:52e0:1a00::1235:1",
           "family": "ipv6",
-          "ms": 16
+          "ms": 11
         },
         {
           "host": "fonts.googleapis.com",
@@ -248,7 +248,7 @@
           "result": "connected",
           "address": "2607:f8b0:4023:140d::5f",
           "family": "ipv6",
-          "ms": 36
+          "ms": 32
         },
         {
           "host": "fonts.gstatic.com",

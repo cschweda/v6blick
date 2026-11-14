@@ -2,8 +2,8 @@
   "schema_version": 1,
   "version": "0.1.0",
   "host": "localhost.",
-  "target": "https://localhost:54891/",
-  "started_at_unix": 1794679879,
+  "target": "https://localhost:60380/",
+  "started_at_unix": 1794682126,
   "vantage": {
     "ipv4": true,
     "ipv6": true
@@ -30,7 +30,7 @@
     {
       "family": "ipv4",
       "address": "127.0.0.1",
-      "port": 54891,
+      "port": 60380,
       "scheme": "https",
       "connect": {
         "result": "connected",
@@ -38,7 +38,7 @@
       },
       "tls": {
         "result": "ok",
-        "ms": 5,
+        "ms": 7,
         "certificate": {
           "sha256": "40dae93ef409537d53fda99ba956245828505fa549541f86ec642304f0bb4ad1",
           "names": [
@@ -52,7 +52,7 @@
       },
       "exchanges": [
         {
-          "url": "https://localhost:54891/",
+          "url": "https://localhost:60380/",
           "address": "127.0.0.1",
           "result": "response",
           "status": 200,
@@ -66,15 +66,15 @@
     {
       "family": "ipv6",
       "address": "::1",
-      "port": 54891,
+      "port": 60380,
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 3
+        "ms": 1
       },
       "tls": {
         "result": "ok",
-        "ms": 5,
+        "ms": 7,
         "certificate": {
           "sha256": "c88ec84726c97dc4a56a8fe0571c3e5af094c5e502be24e9132aa9eb9f2daaad",
           "names": [
@@ -88,18 +88,18 @@
       },
       "exchanges": [
         {
-          "url": "https://localhost:54891/",
+          "url": "https://localhost:60380/",
           "address": "::1",
           "result": "response",
           "status": 301,
-          "location": "https://localhost:54891/old",
+          "location": "https://localhost:60380/old",
           "body_bytes": 0,
           "body_truncated": false,
           "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
-          "url": "https://localhost:54891/old",
+          "url": "https://localhost:60380/old",
           "address": "::1",
           "result": "response",
           "status": 404,
@@ -116,12 +116,12 @@
       "check_id": "EQV-01",
       "severity": "warning",
       "name": "localhost.",
-      "summary": "https://localhost:54891 serves a different certificate over IPv6 than over IPv4",
+      "summary": "https://localhost:60380 serves a different certificate over IPv6 than over IPv4",
       "meaning": "Visitors on IPv6 are shown another certificate. If it is expired or for another name, they get a security warning that IPv4 visitors never see.",
       "fix": "Install the same certificate on every server or load balancer behind the AAAA records, and make sure renewals reach them too.",
       "evidence": {
         "kind": "certificate_mismatch",
-        "port": 54891,
+        "port": 60380,
         "ipv4": [
           {
             "address": "127.0.0.1",
@@ -154,18 +154,18 @@
       "check_id": "EQV-02",
       "severity": "warning",
       "name": "localhost.",
-      "summary": "https://localhost:54891/ answers 200 over IPv4 and 301 over IPv6",
+      "summary": "https://localhost:60380/ answers 200 over IPv4 and 301 over IPv6",
       "meaning": "Visitors on IPv6 get a different answer than visitors on IPv4: another page, an error, or a redirect that leads nowhere for them.",
       "fix": "Make the IPv6 side serve the same configuration as the IPv4 side. Where a redirect leads to a host with no IPv6 address, give that host an AAAA record, or redirect to a name that has one.",
       "evidence": {
         "kind": "response_mismatch",
-        "url": "https://localhost:54891/",
+        "url": "https://localhost:60380/",
         "ipv4": [
           {
             "address": "127.0.0.1",
             "status": 200,
             "ended": "page",
-            "final_url": "https://localhost:54891/",
+            "final_url": "https://localhost:60380/",
             "final_status": 200
           }
         ],
@@ -173,9 +173,9 @@
           {
             "address": "::1",
             "status": 301,
-            "location": "https://localhost:54891/old",
+            "location": "https://localhost:60380/old",
             "ended": "page",
-            "final_url": "https://localhost:54891/old",
+            "final_url": "https://localhost:60380/old",
             "final_status": 404
           }
         ]

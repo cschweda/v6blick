@@ -56,7 +56,7 @@ fn a_recorded_page_that_redirects_to_a_host_without_ipv6_is_pge_01() {
     assert_eq!(findings[0]["name"], "metaincognita.com");
     assert_eq!(
         findings[0]["summary"],
-        "the page cannot be loaded on an IPv6-only network: https://www.metaincognita.com/ redirects to https://metaincognita.com/, and metaincognita.com has no IPv6 address"
+        "the page cannot be loaded on an IPv6-only network: it redirects to https://metaincognita.com/, and metaincognita.com has no IPv6 address"
     );
     assert_eq!(again["exit_code"], 2);
     // The browser's own traffic was held back in both loads.

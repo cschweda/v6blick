@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="author" content="Christopher Schweda">
 <meta property="article:published_time" content="2026-11-14T17:00:00Z">
-<meta property="article:modified_time" content="2026-11-14T20:00:00Z">
+<meta property="article:modified_time" content="2026-11-14T21:00:00Z">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -320,7 +320,7 @@ footer .grid{row-gap:24px}
     <div class="grid">
       <div class="label">IPv6 readiness test for websites</div>
       <h1>See your site <em>without IPv4.</em></h1>
-      <p class="lede">v6blick connects to a site over IPv4 and over IPv6 separately and compares the two. It tells you what breaks for a visitor who has no IPv4, what that means, and how to fix it. A whole-page test, down to the one third-party script with no IPv6 address, is designed and comes next.</p>
+      <p class="lede">v6blick connects to a site over IPv4 and over IPv6 separately and compares the two. It also loads the whole page in a real browser with IPv4 taken away, and names every part that does not arrive, down to the one third-party script with no IPv6 address. Each finding says what it means and how to fix it.</p>
       <div class="cta">
         <a class="btn primary" href="#output">See real output <span aria-hidden="true">&darr;</span></a>
         <a class="btn" href="https://github.com/cschweda/v6blick">Source on GitHub <span aria-hidden="true">&nearr;</span></a>
@@ -364,6 +364,10 @@ footer .grid{row-gap:24px}
         <p class="intro">Real output, for the author's own sites. Each finding has its check ID, the host and the evidence, then what it means for visitors and how to fix it.</p>
         <div class="shots">
           <figure>
+            <img src="screenshots/page-redirect.png" width="822" height="662" loading="lazy" alt="Terminal output of v6blick page www.metaincognita.com with Chrome 157. On an ordinary connection 11 requests, all ok. On an IPv6-only network 2 requests, 1 ok and 1 failed: metaincognita.com has no IPv6 address. One critical finding, PGE-01: the page cannot be loaded on an IPv6-only network, because it redirects to a host with no IPv6 address, with what it means and how to fix it.">
+            <figcaption><b>The whole page, without IPv4.</b> <span class="mono">v6blick page</span> loads the page in Chrome twice. On an ordinary connection all 11 requests arrive. On an IPv6-only network the page never gets past its redirect, and the finding is critical.</figcaption>
+          </figure>
+          <figure>
             <img src="screenshots/check-redirect.png" width="940" height="1072" loading="lazy" alt="Terminal output of v6blick check www.metaincognita.com. The host is an alias with two IPv4 and two IPv6 addresses. Over IPv4 the redirect to https://metaincognita.com/ ends at a page with status 200. Over IPv6 it fails, because metaincognita.com has no IPv6 address. One warning, EQV-02, with what it means and how to fix it.">
             <figcaption><b>A redirect that strands IPv6 visitors.</b> The <span class="mono">www</span> name has IPv6 addresses and answers over them. It redirects to the bare domain, which has no AAAA record. A dual-stack browser never notices.</figcaption>
           </figure>
@@ -378,7 +382,7 @@ footer .grid{row-gap:24px}
         </div>
 
         <h3 class="h3big">What a finding tells you.</h3>
-        <p class="h3sub">Three questions are answered for every finding: how bad is it, what does it mean for a visitor, and can it be fixed. Every finding of the ten checks that work today is about the site's own names and servers, so whoever runs its DNS or hosting can act on it, though that may mean a change at a provider.</p>
+        <p class="h3sub">Three questions are answered for every finding: how bad is it, what does it mean for a visitor, and can it be fixed. A finding about the site's own names and servers is for whoever runs its DNS or hosting to act on, though that may mean a change at a provider. A finding about a third party is theirs to fix and yours to replace.</p>
         <ul class="cad">
           <li><b>Critical</b><p>Broken now for visitors who use IPv6: a published address that nothing answers, or a secure connection that fails over IPv6 only. Fix it first. Exit code 2.</p></li>
           <li><b>Warning</b><p>Wrong or missing for IPv6: visitors without IPv4 are affected, and it can be fixed. No AAAA record, another certificate, a redirect that leads nowhere. Exit code 1.</p></li>
@@ -433,7 +437,7 @@ footer .grid{row-gap:24px}
       <div class="num">03</div>
       <div class="body">
         <h2>Three networks, one page.</h2>
-        <p class="intro">Planned, for the whole-page test. The same page is loaded once in each, and the difference between the three runs is the report.</p>
+        <p class="intro">The same page is loaded once in each, and the difference between the runs is the report. <span class="mono">dual</span> and <span class="mono">v6only</span> work today; <span class="mono">nat64</span> is planned.</p>
         <ul class="cad">
           <li><b>dual</b><p>An ordinary connection with IPv4 and IPv6. The baseline: nothing can break here, by definition.</p></li>
           <li><b>nat64</b><p>An IPv6-only network with a translator, as on many mobile networks. Shows what a real mobile visitor without IPv4 hits today: IPv4 addresses written directly into pages or scripts.</p></li>
@@ -441,7 +445,7 @@ footer .grid{row-gap:24px}
         </ul>
 
         <h3 class="h3big">NAT64, simulated honestly.</h3>
-        <p class="h3sub">A real NAT64 network lets a client reach an IPv4-only hostname, because the network's DNS invents an IPv6 address for it. It does not help with an IPv4 address used directly, because no DNS lookup happens. v6blick will apply exactly that rule, with no gateway and no special network.</p>
+        <p class="h3sub">Planned. A real NAT64 network lets a client reach an IPv4-only hostname, because the network's DNS invents an IPv6 address for it. It does not help with an IPv4 address used directly, because no DNS lookup happens. v6blick will apply exactly that rule, with no gateway and no special network.</p>
         <ul class="cad">
           <li><b>A hostname with an IPv6 address</b><p>Connect over IPv6.</p></li>
           <li><b>A hostname with only an IPv4 address</b><p>Allowed, and marked "reached through translation".</p></li>
@@ -458,8 +462,8 @@ footer .grid{row-gap:24px}
       <div class="body">
         <h2>Seventeen checks, every one about IPv6.</h2>
         <p class="intro">Each check has a stable ID, a severity, and the evidence behind it. The most telling ones are comparisons: the same name, asked over IPv4 and over IPv6.</p>
-        <p class="tier"><b>Working today</b><span>Ten checks: addresses, reachability and equivalence, in <span class="mono">v6blick check</span>. No browser needed.</span></p>
-        <p class="tier"><b>Planned</b><span>The page, literal-address and packet-size checks, in <span class="mono">v6blick page</span>, which drives an installed Chrome.</span></p>
+        <p class="tier"><b>Working today</b><span>Fourteen checks: addresses, reachability and equivalence in <span class="mono">v6blick check</span>, which needs no browser, and the page checks in <span class="mono">v6blick page</span>, which drives an installed Chrome.</span></p>
+        <p class="tier"><b>Planned</b><span>The literal-address checks, with the NAT64 mode, and the packet-size check.</span></p>
         <div class="checks three">
           <article>
             <div class="label">ADR</div>
@@ -498,7 +502,7 @@ footer .grid{row-gap:24px}
             <ul><li><b>01</b>A large response stalls over IPv6 only</li></ul>
           </article>
         </div>
-        <p class="status"><b>Third parties</b><span>In the page test, a failure at a third-party host will be a notice, not a warning, because the site's owner cannot fix it, only replace or self-host it. Failures will be grouped by registrable domain, first party first, so the list reads as a list of suppliers.</span></p>
+        <p class="status"><b>Third parties</b><span>In the page test, a failure at a third-party host is a notice, not a warning, because the site's owner cannot fix it, only replace or self-host it. Each host is marked as the page's own site or a third party, by the Public Suffix List, so the notices read as a list of suppliers.</span></p>
       </div>
     </div>
   </section>
@@ -518,7 +522,7 @@ footer .grid{row-gap:24px}
         </ol>
 
         <h3 class="h3big">The page test adds a browser and a proxy.</h3>
-        <p class="h3sub">Planned. <span class="mono">v6blick page</span> starts an installed Chrome with a fresh profile and points it at a proxy on <span class="mono">127.0.0.1</span> that lives only for the run. The proxy resolves every hostname itself, applies the rules of the current network, connects or refuses, and records the outcome. A real IPv6-only test network needs root, a second interface and a gateway. A proxy needs none of that, and it runs in CI.</p>
+        <p class="h3sub"><span class="mono">v6blick page</span> starts an installed Chrome with a fresh profile and points it at a proxy on <span class="mono">127.0.0.1</span> that lives only for one page load. The proxy resolves every hostname itself, applies the rules of the current network, connects or refuses, and records the outcome. It carries only what the page asks for: the browser's own update and sign-in traffic is refused. The page is loaded on an ordinary connection first, so that only what works there and fails without IPv4 is reported. A real IPv6-only test network needs root, a second interface and a gateway. A proxy needs none of that, and it runs in CI.</p>
         <p class="limits"><strong>It will not blame the site for your network.</strong> The test machine needs working IPv6. <span class="mono">v6blick doctor</span> checks it. Without it, v6blick says so and exits with code 3; it never reports a site as broken because the machine it runs on has no IPv6.</p>
       </div>
     </div>
@@ -538,7 +542,7 @@ footer .grid{row-gap:24px}
               <tr><th scope="row">IPv6 Web Resource Checker (IETF 124 hackathon)</th><td class="y">Yes</td><td>No</td><td class="y">Yes, with a browser</td><td>No</td><td>A hackathon project</td></tr>
               <tr><th scope="row">test-ipv6.com and similar</th><td>No, the visitor's connection</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
               <tr><th scope="row">zoneblick IPV checks (proposed)</th><td>A zone's names</td><td class="y">Yes, over time</td><td>No</td><td>No</td><td class="y">Yes</td></tr>
-              <tr class="us"><th scope="row">v6blick</th><td>A host or a URL</td><td>Certificate, status, redirect, body, timing</td><td>Planned: every resource, by supplier</td><td>Planned: simulated; a real gateway as an option</td><td>One binary</td></tr>
+              <tr class="us"><th scope="row">v6blick</th><td>A host or a URL</td><td>Certificate, status, redirect, body, timing</td><td>Every request, by host, own site or third party</td><td>Planned: simulated; a real gateway as an option</td><td>One binary</td></tr>
             </tbody>
           </table>
         </div>
@@ -562,7 +566,7 @@ footer .grid{row-gap:24px}
       <div class="num">07</div>
       <div class="body">
         <h2>Who it is for.</h2>
-        <p class="intro">Eight situations v6blick is made for, each with the command that answers it. The first six work today; the last two need the page test, which comes next.</p>
+        <p class="intro">Eight situations v6blick is made for, each with the command that answers it. All but the last work today.</p>
         <div class="run two">
           <article>
             <h3>"We published an AAAA record last year. Does it still work?"</h3>
@@ -597,8 +601,8 @@ footer .grid{row-gap:24px}
           </article>
           <article>
             <h3>"We want to stop paying for IPv4 addresses. What would break?"</h3>
-            <p>Planned. The <span class="mono">v6only</span> mode is the true dependency list: every host the page needs that has no working IPv6 address, grouped by who serves it.</p>
-<pre tabindex="0">v6blick page https://metaincognita.com --mode v6only</pre>
+            <p><span class="mono">page</span> loads the page without IPv4 and lists every host it needs that has no working IPv6 address, marked as your own site or a third party: the true dependency list.</p>
+<pre tabindex="0">v6blick page https://metaincognita.com</pre>
           </article>
           <article>
             <h3>"Most of our visitors are on mobile networks. What do they hit today?"</h3>
@@ -658,7 +662,7 @@ cargo uninstall v6blick</pre>
           </article>
           <article>
             <h3>Where it runs</h3>
-            <p>Developed and tested on macOS. It is written to run on Linux as well, where it has not been run yet, and it is untested on Windows. The machine needs working IPv6; <span class="mono">v6blick doctor</span> tells you in a second.</p>
+            <p>Developed and tested on macOS. It is written to run on Linux as well, where it has not been run yet, and it is untested on Windows. The machine needs working IPv6, and the page test needs Chrome or Chromium; <span class="mono">v6blick doctor</span> tells you both in a second.</p>
           </article>
         </div>
 
@@ -713,6 +717,27 @@ warning  EQV-02  https://www.metaincognita.com/ redirects to https://metaincogni
 $ v6blick check metaincognita.com --json | jq -r '.findings[] | .fix'
 Publish an AAAA record for the host. Many hosting providers and CDNs offer IPv6 as a setting; if yours has none for this name, put the name behind a service that does.</pre>
           </article>
+          <article class="wide">
+            <h3>Load a whole page</h3>
+            <p>In an installed Chrome or Chromium, once on an ordinary connection and once without IPv4. The browser gets a fresh profile, which is deleted afterwards. A small page takes about seven seconds.</p>
+<pre tabindex="0">$ v6blick page www.metaincognita.com
+Page loads
+  dual      11 requests    11 ok
+  v6only     2 requests     1 ok     1 failed
+
+Hosts in v6only
+  metaincognita.com      own site       0 ok    1 failed   metaincognita.com has no IPv6 address
+  www.metaincognita.com  own site       1 ok
+
+Findings
+  CRITICAL (1)  broken now for visitors who use IPv6; fix it first
+    PGE-01  metaincognita.com
+      the page cannot be loaded on an IPv6-only network: it redirects to https://metaincognita.com/,
+      and metaincognita.com has no IPv6 address
+<span class="c">...</span>
+$ echo $?
+2</pre>
+          </article>
           <article>
             <h3>One address, as given</h3>
             <p>A full address is probed with its own scheme, port and path, and nothing else.</p>
@@ -727,13 +752,12 @@ Publish an AAAA record for the host. Many hosting providers and CDNs offer IPv6 
         </div>
 
         <h3 class="h3big">Coming next.</h3>
-        <p class="h3sub">Planned, and not built: the page test, which drives an installed Chrome through a local proxy.</p>
+        <p class="h3sub">Planned, and not built.</p>
         <div class="run two">
           <article>
-            <h3>A whole page</h3>
-            <p>All three networks in one run, or one of them.</p>
-<pre tabindex="0">v6blick page https://metaincognita.com
-v6blick page https://metaincognita.com --mode v6only</pre>
+            <h3>The third network</h3>
+            <p>An IPv6-only network with a NAT64 translator, as on many mobile networks, and the checks for IPv4 addresses written into a page.</p>
+<pre tabindex="0">v6blick page https://metaincognita.com --mode nat64</pre>
           </article>
           <article>
             <h3>A report to hand on</h3>
@@ -742,8 +766,8 @@ v6blick page https://metaincognita.com --mode v6only</pre>
 v6blick page --urls urls.txt</pre>
           </article>
         </div>
-        <p class="status"><b>Early days</b><span>Phase 0 works: <span class="mono">check</span> and <span class="mono">doctor</span>, ten checks, text and JSON output. There is no release yet, and the whole-page test is not built. The <a href="https://github.com/cschweda/v6blick#build-phases">README</a> lists the phases and what each one delivers; the <a href="https://github.com/cschweda/v6blick/blob/main/DESIGN.md">design</a> has the rest.</span></p>
-        <p class="status"><b>Security audit</b><span>One red team and blue team audit so far, of 0.1.0 on 14 November 2026: no critical or high finding, five medium and twelve low, all fixed but two low ones that are documented. The <a href="https://github.com/cschweda/v6blick#security-audits">README</a> keeps the full record: what broke, what held, and what is still open.</span></p>
+        <p class="status"><b>Early days</b><span>Phases 0 and 1 work: <span class="mono">check</span>, <span class="mono">page</span> and <span class="mono">doctor</span>, fourteen checks, text and JSON output. There are no ready-built binaries yet, and the NAT64 mode and the HTML report are not built. The <a href="https://github.com/cschweda/v6blick#build-phases">README</a> lists the phases and what each one delivers; the <a href="https://github.com/cschweda/v6blick/blob/main/DESIGN.md">design</a> has the rest.</span></p>
+        <p class="status"><b>Security audit</b><span>One red team and blue team audit so far, of 0.1.0 on 14 November 2026: no critical or high finding, five medium and twelve low, all fixed but two low ones that are documented. The page test is newer than that audit and has not been audited yet. The <a href="https://github.com/cschweda/v6blick#security-audits">README</a> keeps the full record: what broke, what held, and what is still open.</span></p>
         <p class="status"><b>Polite by design</b><span>Bounded concurrency, a timeout on every step, at most one retry, plain GET requests with a <span class="mono">User-Agent</span> that names v6blick, and no crawling beyond what was asked for. Test your own sites, or sites you have permission to test.</span></p>
       </div>
     </div>

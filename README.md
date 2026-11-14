@@ -1,12 +1,12 @@
-![The v6blick social card: "See your site without IPv4." Below it, a one-line description, three real results (a warning EQV-02 for www.metaincognita.com, a warning ADR-01 for metaincognita.com, and zoneblick.com clean), the labels IPv4 against IPv6, 10 checks today, JSON for CI, no account and one binary, and the finding itself: www.metaincognita.com answers 301 then 200 over IPv4, its redirect fails over IPv6, and metaincognita.com has no AAAA record](docs/og-image.png)
+![The v6blick social card: "See your site without IPv4." Below it, a one-line description, three real results (a critical PGE-01 for www.metaincognita.com, a warning ADR-01 for metaincognita.com, and zoneblick.com clean on all 14 checks), the labels IPv4 against IPv6, whole-page test, 14 checks today, JSON for CI and one binary, and the finding itself: www.metaincognita.com answers 301 then 200 over IPv4, its redirect fails over IPv6, and metaincognita.com has no AAAA record](docs/og-image.png)
 
 # v6blick
 
 Does your site work for someone who has no IPv4?
 
-v6blick connects to a site over IPv4 and over IPv6 separately, compares the two, and reports what breaks for a visitor without IPv4, what that means and how to fix it. That part works today. The plan goes further: load a whole page from three kinds of network (an ordinary dual-stack connection, an IPv6-only network with a NAT64 translator, and an IPv6-only network with no translator) and report what breaks in each, down to the one third-party script that has no IPv6 address. That part is designed and not built.
+v6blick answers that in two ways. `v6blick check` connects to a site over IPv4 and over IPv6 separately, compares the two, and reports what breaks for a visitor without IPv4. `v6blick page` loads the whole page in a real browser, once on an ordinary connection and once on an IPv6-only network, and names every part of it that does not arrive, down to the one third-party script that has no IPv6 address. Each finding says what it means and how to fix it. Still planned: a third kind of network, IPv6-only with a NAT64 translator, as on many mobile networks.
 
-**Status:** early. Phase 0 works: `v6blick check` looks a host up, connects to it over IPv4 and over IPv6 separately, compares the two and reports what differs, with ten checks, text and JSON output and exit codes for CI. `v6blick doctor` says whether this machine can run it. The whole-page test (`v6blick page`, the three networks) is designed and not built yet; sections below say which parts are planned. There is no release yet: build it from source.
+**Status:** early. Phases 0 and 1 work. `v6blick check` looks a host up, connects to it over IPv4 and over IPv6 separately and compares the two, with ten checks. `v6blick page` loads a page in an installed Chrome or Chromium through a local proxy that takes IPv4 away, with four checks. `v6blick doctor` says whether this machine can run them. Both print text or JSON and exit with a code for CI. The NAT64 mode, the literal-address checks and the HTML report are designed and not built; sections below say which parts are planned. There are no ready-built binaries yet: build it from source. The page test is newer than the security audit below and has not been audited.
 
 - Website: https://cschweda.github.io/v6blick/
 - Design document: [DESIGN.md](DESIGN.md)
@@ -53,22 +53,18 @@ A clean site. `zoneblick.com` has four addresses in each family, and all eight s
 
 ![Terminal output of v6blick check zoneblick.com: four IPv4 and four IPv6 addresses, all connecting in under 40 ms on ports 443 and 80 with the same certificate, and no findings](screenshots/check-clean.png)
 
-The page test is not built. This is the output the design aims at for it, a sketch and not real output:
+The whole page, in a real browser. `v6blick page` loads it once on an ordinary connection and once without IPv4. Here the page itself never arrives on an IPv6-only network, because of the same redirect:
 
-```
-v6blick page https://metaincognita.com   IPv6 on this machine: working
+![Terminal output of v6blick page www.metaincognita.com with Chrome 157: on an ordinary connection 11 requests, all ok; on an IPv6-only network 2 requests, 1 ok and 1 failed. The host metaincognita.com has no IPv6 address. One critical finding, PGE-01: the page cannot be loaded on an IPv6-only network, because it redirects to https://metaincognita.com/, which has no IPv6 address; followed by what it means and how to fix it](screenshots/page-redirect.png)
 
-  dual     42 requests   42 ok
-  nat64    42 requests   41 ok    1 refused
-  v6only   42 requests   33 ok    9 failed
+A page that loads alike in both. `zoneblick.com` asks three third parties for fonts and a script, and all of them have IPv6:
 
-  warning  PGE-02  static.example.org      3 requests     no AAAA record
-  notice   PGE-02  fonts.thirdparty.example 4 requests    no AAAA record (third party)
-```
+![Terminal output of v6blick page zoneblick.com: 6 requests, all ok, both on an ordinary connection and on an IPv6-only network. Four hosts: zoneblick.com as the page's own site, and fonts.googleapis.com, fonts.gstatic.com and plausible.io as third parties. No findings](screenshots/page-clean.png)
+
 
 ## Who it is for
 
-Nine situations v6blick is designed for, each with the command that answers it. Those that use `check` and `doctor` work today. The three that use `page` (5, 6 and 7) are planned, for Phases 1 to 3.
+Nine situations v6blick is designed for, each with the command that answers it. All work today except number 6, which needs the NAT64 mode of Phase 2.
 
 **1. "We published an AAAA record last year. Does it still work?"** A dual-stack browser would hide a dead IPv6 address by falling back. `check` connects over each family on its own, so an address that no longer answers is a critical finding (RCH-01).
 
@@ -96,22 +92,22 @@ v6blick check www.metaincognita.com
 
 Put `--` before a host that comes from somewhere you do not control, such as a pull request. Without it, a "host" of `--help` would print the help text and exit `0`.
 
-**5. "We want to stop paying for IPv4 addresses. What would break?"** The `v6only` mode is the true dependency list: every host the page needs that has no working IPv6 address, grouped by who serves it.
+**5. "We want to stop paying for IPv4 addresses. What would break?"** `page` loads the page without IPv4 and lists every host it needs that has no working IPv6 address: the true dependency list.
 
 ```
-v6blick page https://metaincognita.com --mode v6only
+v6blick page https://metaincognita.com
 ```
 
-**6. "Most of our visitors are on mobile networks. What do they hit today?"** Many mobile networks are IPv6-only with a NAT64 translator. That rescues IPv4-only hostnames, and it does not rescue an IPv4 address written straight into a page or a script (LIT-01).
+**6. "Most of our visitors are on mobile networks. What do they hit today?"** Planned. Many mobile networks are IPv6-only with a NAT64 translator. That rescues IPv4-only hostnames, and it does not rescue an IPv4 address written straight into a page or a script (LIT-01).
 
 ```
 v6blick page https://metaincognita.com --mode nat64
 ```
 
-**7. "Which of our third parties hold us back?"** A third-party failure is a notice, because the site owner cannot fix it, only replace or self-host it. The page report groups failures by registrable domain, so the list reads as a list of suppliers to talk to.
+**7. "Which of our third parties hold us back?"** A failure at a third party is a notice, not a warning, because the site owner cannot fix it, only replace or self-host it. The page report says for each host whether it is the page's own site or a third party, by the Public Suffix List, so the notices read as a list of suppliers to talk to.
 
 ```
-v6blick page https://metaincognita.com --json
+v6blick page https://metaincognita.com --json | jq -r '.findings[] | select(.evidence.third_party) | .name'
 ```
 
 **8. "I am testing a build on my own machine before it goes live."** Private and loopback addresses are refused by default, so a page cannot steer the tool at an internal host. One flag permits them.
@@ -158,6 +154,8 @@ Two things v6blick needs from the machine it runs on:
 
 - **Working IPv6.** Without it there is nothing to compare, and `check` exits `3` and says so. `v6blick doctor` tells you in a second.
 - **A stable Rust toolchain, 1.88 or later**, to build it. There are no ready-built binaries yet.
+
+`v6blick page` also needs **Chrome or Chromium** installed. v6blick looks in the usual places and on the search path, and `doctor` says what it found. `check` needs no browser.
 
 **GitHub's hosted runners have no IPv6 connectivity by default**, so `v6blick check` exits `3` there. In GitHub Actions, use a self-hosted runner on a machine that has IPv6. Other CI services differ; run `v6blick doctor` as the first step to find out.
 
@@ -295,6 +293,34 @@ Publish an AAAA record for the host. Many hosting providers and CDNs offer IPv6 
 $ v6blick check http://localhost:8080/ --allow-private
 ```
 
+**8. Load a whole page.** In an installed Chrome or Chromium, once on an ordinary connection and once without IPv4. It needs no setup: the browser gets a fresh profile, which is deleted afterwards.
+
+```
+$ v6blick page www.metaincognita.com
+v6blick page https://www.metaincognita.com/
+2026-11-14 18:49 UTC   IPv6 on this machine: working   Chrome/157.0.8103.51
+
+Page loads
+  dual      11 requests    11 ok
+  v6only     2 requests     1 ok     1 failed
+  first view only: what the page loads on a click or a scroll is not seen
+
+Hosts in v6only
+  metaincognita.com      own site       0 ok    1 failed   metaincognita.com has no IPv6 address
+  www.metaincognita.com  own site       1 ok
+
+Findings
+  CRITICAL (1)  broken now for visitors who use IPv6; fix it first
+    PGE-01  metaincognita.com
+      the page cannot be loaded on an IPv6-only network: it redirects to https://metaincognita.com/,
+      and metaincognita.com has no IPv6 address
+...
+$ echo $?
+2
+```
+
+A page run takes about seven seconds for a small page: two browser starts and two page loads.
+
 **How long, and how much traffic.** A check takes from one to about five seconds. Measured: `metaincognita.com` took 9 DNS queries and 6 requests in under a second; `www.metaincognita.com`, an alias that redirects to another host, took 58 DNS queries and 16 requests in five seconds. Each address gets one `GET` on each port, and one more for each redirect that is followed.
 
 ## What a finding tells you
@@ -308,7 +334,7 @@ Every finding answers three questions: how bad is it, what does it mean for a vi
 | **notice** | Worth a look. It may be harmless, or chance in one measurement. | `1` |
 | **info** | For your information; nothing to fix. | `0` |
 
-Under each finding the text output has two short paragraphs, `Means:` and `Fix:`. The JSON output has the same text as `meaning` and `fix`. Every finding of the ten checks that work today is about the site's own names and servers, so whoever runs its DNS or hosting can act on it. That may still mean changing a setting at a hosting or DNS provider, or moving away from one that has no IPv6.
+Under each finding the text output has two short paragraphs, `Means:` and `Fix:`. The JSON output has the same text as `meaning` and `fix`. Every finding of the ten `check` checks is about the site's own names and servers, so whoever runs its DNS or hosting can act on it. The page checks can also name a third party, which is theirs to fix and yours to replace. That may still mean changing a setting at a hosting or DNS provider, or moving away from one that has no IPv6.
 
 | ID | What it means for visitors | How to fix it |
 |---|---|---|
@@ -322,6 +348,10 @@ Under each finding the text output has two short paragraphs, `Means:` and `Fix:`
 | EQV-01 | Visitors on IPv6 are shown another certificate, perhaps an expired one. | Install the same certificate on every server behind the AAAA records. |
 | EQV-02 | Visitors on IPv6 get another answer: another page, an error, or a redirect that leads nowhere for them. | Serve the same configuration on the IPv6 side; give the target of a redirect an AAAA record. |
 | EQV-03 | Visitors on IPv6 may be shown a different page. A page that changes on every load can cause this by chance. | Compare the two responses. |
+| PGE-01 | On an IPv6-only network with no translator they do not get the page at all. | Give the page's host an IPv6 address, and every host it redirects through. |
+| PGE-02 | The page loads, and a stylesheet, script, font or image from this host is missing. | For your own host, publish an AAAA record. For a third party, ask them, self-host the file, or change supplier. |
+| PGE-03 | The host has an IPv6 address and what the page needs from it still does not arrive. | Run `v6blick check` on the host to see why. |
+| PGE-04 | A resource is redirected to a host that cannot be reached without IPv4. | Give that host an IPv6 address, or link elsewhere. |
 
 ## Command reference
 
@@ -330,8 +360,9 @@ v6blick check <host-or-url>                   # DNS and connection checks, no br
 v6blick check <host-or-url> --json            # one JSON document for CI                 (works today)
 v6blick check <host-or-url> --allow-private   # let private and loopback addresses be contacted  (works today)
 v6blick doctor                                # does this machine have IPv6? is Chrome found?    (works today)
-v6blick page <url>                            # whole page, all three modes              (Phases 1-2)
-v6blick page <url> --mode v6only              # one mode
+v6blick page <url>                            # whole page: ordinary connection, then IPv6 only   (works today)
+v6blick page <url> --json                     # one JSON document                        (works today)
+v6blick page <url> --mode nat64               # an IPv6-only network with a translator   (Phase 2)
 v6blick page <url> --html report.html         # self-contained report                    (Phase 3)
 v6blick page --urls urls.txt                  # many pages                               (Phase 3)
 ```
@@ -342,9 +373,10 @@ A bare host name is probed as `https://host/` and `http://host/`. A full address
 
 | Option | For | Meaning |
 |---|---|---|
-| `--json` | `check` | Print one JSON document on stdout instead of text. See [JSON output](#json-output) |
-| `--allow-private` | `check` | Let private, loopback and link-local addresses be contacted, for a build on your own machine or network. Also lets a name the public DNS does not know be looked up with this machine's resolver |
-| `--` | `check` | Everything after it is the host, never an option. Use it when the host comes from somewhere you do not control |
+| `--json` | `check`, `page` | Print one JSON document on stdout instead of text. See [JSON output](#json-output) |
+| `--mode v6only` | `page` | The network to test the page in, after the ordinary connection. `v6only` is the default and the only one built |
+| `--allow-private` | `check`, `page` | Let private, loopback and link-local addresses be contacted, for a build on your own machine or network. Also lets a name the public DNS does not know be looked up with this machine's resolver |
+| `--` | `check`, `page` | Everything after it is the host, never an option. Use it when the host comes from somewhere you do not control |
 | `-h`, `--help` | all | Print help |
 | `-V`, `--version` | `v6blick` | Print the version |
 
@@ -375,7 +407,7 @@ These are zoneblick's exit codes. A bad command line exits `3`, not `2`.
 
 ### Checks
 
-Severity levels are the same as zoneblick's: **critical**, **warning**, **notice**, **info**. Check IDs are stable. The ten checks of the first three groups work today.
+Severity levels are the same as zoneblick's: **critical**, **warning**, **notice**, **info**. Check IDs are stable. The fourteen checks of the first four groups work today.
 
 A host may have several addresses in each family, and the servers behind them need not be identical. The comparisons therefore report a difference only when no IPv6 address agrees with any IPv4 address.
 
@@ -408,7 +440,7 @@ RCH-01 is critical because a published address that does not answer is worse tha
 
 EQV-02 looks at the first response and at where the redirects end, so it also finds a redirect to a host that has no IPv6 address. EQV-03 is a notice because dynamic pages differ between any two requests. It compares the structure of the page (the sequence of its HTML tags), not its bytes, and fires when the structure differs or the sizes are more than a fifth apart.
 
-#### Page (`PGE`), needs a browser, Phase 1
+#### Page (`PGE`), working, needs a browser
 
 | ID | Check | Severity |
 |---|---|---|
@@ -495,6 +527,19 @@ EQV-02 looks at the first response and at where the redirects end, so it also fi
 
 A saved document holds the whole observation, so the checks can be run on it again; `tests/fixtures/` has three, and the tests do exactly that.
 
+### `page --json`
+
+`v6blick page <url> --json` prints a document of the same shape: `schema_version`, `version`, what was recorded, then `findings`, `summary` and `exit_code`.
+
+| Field | Contents |
+|---|---|
+| `url`, `host` | The page that was loaded, and its host |
+| `browser` | The browser that loaded it, as it names itself, for example `Chrome/157.0.8103.51` |
+| `loads` | One entry per mode, `dual` first. `ended` is `settled` when the page finished and went quiet, `timeout` when it was stopped at the time limit |
+| `loads[].requests` | Every request the page made, in order: `url`, `host`, `kind` (`document`, `script`, `image`, `stylesheet`, `font`, `xhr`, `fetch` and so on), `document` (true for the page itself), `redirected_from`, and a `result` of `loaded` (with `status`), `redirected`, `failed` (with the browser's `error`), `canceled` or `unfinished` |
+| `loads[].connections` | Every connection the browser asked the proxy for, with what the proxy decided: `connected` (with `address`, `family`, `ms`), `refused` (with a `reason` of `no_ipv6_address`, `literal_ipv4`, `not_public` or `not_asked_by_page`) or `failed` (with a `stage` of `resolve` or `connect`). This is where the reason for a failed request is |
+| `findings` | As for `check`. `evidence.kind` is `page_unloadable` for PGE-01 and `host_fails` for PGE-02 to PGE-04, which carries `host`, `site`, `third_party`, the number of `requests`, their `kinds` and the first few `urls` |
+
 A run that fails prints a short document instead, also on stdout, and exits `3`:
 
 ```json
@@ -520,6 +565,8 @@ A run that fails prints a short document instead, also on stdout, and exits `3`:
 | `v6only` | An IPv6-only network with no translator | Every host without a working IPv6 address |
 
 `v6only` gives the true dependency list. `nat64` shows what a real mobile user without IPv4 would hit today.
+
+`dual` and `v6only` are built: every page run loads the page in `dual` first, as the baseline, and a request counts against `v6only` only when it worked in `dual`. `nat64` is Phase 2, and so is what the rest of this section describes.
 
 ### How NAT64 is simulated
 
@@ -557,8 +604,8 @@ One caveat is stated in every report: many phones run a second translator on the
 
 - **Resolver.** An iterative resolver that starts at the root hints and follows referrals down, one server at a time, keeping every referral it saw. It is copied from zoneblick, with the zoneblick commit recorded in `DECISIONS.md`. Run with IPv4 switched off, the same code is the IPv6-only walk behind ADR-03.
 - **Prober.** Connects to one address of one family, completes TLS under the host's name, and sends one HTTP/1.1 `GET`. It is written directly on `tokio` and `rustls`, because the probe has to choose the address itself and keep the certificate and the timings, which a general HTTP client hides. It accepts any certificate and records it: v6blick compares what the two families present, and does not decide whether a browser would trust either.
-- **Mode proxy** (Phase 1). A forward proxy on `127.0.0.1`, alive only for the run. The browser sends it every request by hostname; the proxy resolves the name itself, applies the rules of the current mode, connects or refuses, and records the outcome. This is where `v6only` and `nat64` are enforced.
-- **Browser driver** (Phase 1). Finds an installed Chrome or Chromium, starts it headless with a fresh temporary profile and the proxy set, loads the URL, waits for the page to settle, and collects the list of requests and the page source.
+- **Mode proxy.** A forward proxy on `127.0.0.1`, alive only for one page load. The browser sends it every request by hostname; the proxy resolves the name itself, applies the rules of the current mode, connects or refuses, and records the outcome. This is where `v6only` is enforced. An HTTPS connection is a tunnel the proxy cannot read; the browser does its own TLS. The proxy carries only what the page asked for: the browser holds each request until its host has been announced to the proxy, and anything else, such as the browser's own update and sign-in traffic, is refused.
+- **Browser driver.** Finds an installed Chrome or Chromium, starts it headless with a fresh temporary profile and the proxy set, loads the URL, waits for the page to settle, and collects the list of requests, including those of frames and workers. It speaks to the browser over the DevTools port on the loopback address, with a small client and a small WebSocket implementation written in this repository, using a handful of protocol calls.
 - **Findings.** Pure functions from recorded observations to findings. Every check can be tested offline against hand-built or recorded observations.
 - **Report.** Terminal text and JSON; a self-contained HTML report in Phase 3.
 
@@ -579,7 +626,8 @@ The cost: HTTP/3 does not pass through an ordinary proxy, so the browser runs wi
 | CLI | `clap` with derive |
 | JSON | `serde`, `serde_json` |
 | Errors | `thiserror` in library code, `anyhow` at the binary edge |
-| Browser control | Chrome DevTools Protocol; crate or hand-written client still to be decided |
+| Browser control | Chrome DevTools Protocol, by a small client written here, over a WebSocket written here |
+| First party or third | The Public Suffix List, by the `psl` crate |
 
 ### Source layout
 
@@ -593,6 +641,9 @@ One Cargo package. All network I/O is in `resolve` and `probe`; `checks` has non
 | `checks` | Pure functions from observations to findings |
 | `output` | The report, as text or JSON, and the exit code |
 | `cli` | Argument parsing, `check` and `doctor` |
+| `proxy` | The mode proxy: decides each connection by the rule of the mode, then carries bytes |
+| `browser` | Starts Chrome, drives it over DevTools (`cdp`) on a WebSocket (`ws`), and collects a page's requests |
+| `page` | A whole `page` run: the baseline load, then the mode under test |
 | `doctor` | What `doctor` looks at besides the network: this machine's IPv6 address, and where a Chrome or Chromium is |
 
 ## Safety and politeness
@@ -603,8 +654,8 @@ One Cargo package. All network I/O is in `resolve` and `probe`; `checks` has non
 - **Polite.** At most four probes and sixteen DNS queries in flight, a timeout on every network step (5 s to connect, 5 s for TLS, 10 s for a response), at most five DNS queries a second to one server, at most one retry of a DNS query and none of a probe, and at most 600 DNS queries in a run. One probe with all its redirects has 30 seconds, and the whole run has two minutes; a run that is stopped reports nothing.
 - **Plain requests only.** One `GET` per probe, with the `User-Agent` `v6blick/<version> (+https://github.com/cschweda/v6blick)`. At most five redirects are followed, each one is recorded, and at most 1 MiB of a body is read.
 - **What comes from the network is treated as hostile.** Record data, header values and error texts are stripped of control characters before they are printed, and a redirect cannot lead to a private address.
-- **The proxy is local and short-lived** (Phase 1). It binds to `127.0.0.1` on a random port for the length of the run and is not usable as a general proxy.
-- **The browser is isolated** (Phase 1). A fresh temporary profile per run, deleted afterwards. No saved logins, no extensions.
+- **The proxy is local and short-lived.** It binds to `127.0.0.1` on a random port for the length of one page load, applies the same address rule as everything else, and connects only to hosts the page has asked for.
+- **The browser is isolated.** A fresh temporary profile per page load, readable by you alone and deleted afterwards. No saved logins, no extensions, no cache. The browser cannot outlive the run. A page load has 30 seconds, and a page run two and a half minutes.
 
 ## How it divides the work with zoneblick
 
@@ -623,7 +674,7 @@ v6blick follows zoneblick's habits: stable check IDs, the same four severities, 
 | Phase | Deliverable | State |
 |---|---|---|
 | 0 | `v6blick check` and `doctor`: ADR, RCH and EQV checks, text and JSON output | Done |
-| 1 | `v6blick page --mode v6only`: mode proxy, browser driver, PGE checks | Planned |
+| 1 | `v6blick page --mode v6only`: mode proxy, browser driver, PGE checks | Done |
 | 2 | `nat64` simulation and LIT checks; all three modes in one run | Planned |
 | 3 | HTML report, `--urls`, a GitHub Action | Planned |
 | 4 | MTU-01 | Planned |
@@ -637,10 +688,11 @@ cargo clippy -- -D warnings
 cargo test
 ```
 
-Tests do not use the network. The checks are tested against hand-built observations and against three recorded runs in `tests/fixtures/`. The resolver is tested against hand-built DNS worlds that a replaying client answers from. The prober, and a whole `check` run, are tested against a local server started by the test itself, with one IPv4 and one IPv6 listener on the same port that can be made to differ or to be absent; this needs `127.0.0.1` and `::1` on the machine, nothing more. Tests that need the live network are marked `#[ignore]`:
+Tests do not use the network. The checks are tested against hand-built observations and against three recorded runs in `tests/fixtures/`. The resolver is tested against hand-built DNS worlds that a replaying client answers from. The prober, and a whole `check` run, are tested against a local server started by the test itself, with one IPv4 and one IPv6 listener on the same port that can be made to differ or to be absent; this needs `127.0.0.1` and `::1` on the machine, nothing more. The proxy is tested between a hand-written client and that local server; the WebSocket and DevTools clients against small servers inside the tests; the page checks against hand-built page loads and two recorded ones. Tests that need the live network or start a browser are marked `#[ignore]`:
 
 ```
-cargo test -- --ignored                                    # the live tests
+cargo test -- --ignored                                    # the live tests, and the browser tests (need Chrome or Chromium)
+cargo test --test page record_page_fixtures -- --ignored   # record the page fixtures again
 cargo test --test check record_fixtures -- --ignored       # record the fixtures again
 ```
 
@@ -652,8 +704,8 @@ cargo test --test check record_fixtures -- --ignored       # record the fixtures
 | `DECISIONS.md` | Choices made during implementation, one line each, and what was copied from zoneblick |
 | `KICKOFF.md` | The prompt that started Phase 0 |
 | `src/` | The code; see [Source layout](#source-layout) |
-| `tests/` | Offline tests: `resolver.rs`, `probe.rs`, `check.rs` (a whole run), `cli.rs` (the binary), and `redteam_*.rs` (the attacks of the security audit, kept as regression tests); `common/` holds the DNS worlds and the local test server |
-| `tests/fixtures/` | Three recorded runs as `--json` documents, and two self-signed test certificates |
+| `tests/` | Offline tests: `resolver.rs`, `probe.rs`, `proxy.rs`, `check.rs` and `page.rs` (whole runs), `cli.rs` (the binary), and `redteam_*.rs` (the attacks of the security audit, kept as regression tests); `common/` holds the DNS worlds and the local test server |
+| `tests/fixtures/` | Five recorded runs as `--json` documents (three of `check`, two of `page`), and two self-signed test certificates |
 | `screenshots/` | The terminal screenshots in this README |
 | `docs/` | The project site, served by GitHub Pages: one static page, the social card (`og-image.png`, 1200x630), screenshots, icons, `robots.txt` and `llms.txt` |
 | `packaging/og-image.html` | Source of the social card, with the command that renders it |
@@ -687,6 +739,8 @@ Known, and not fixed.
 - **Redirects may name any public host.** A hostile site can make one run send up to five requests per probe, so up to 80 plain `GET`s, to hosts of its choosing. They are ordinary requests, rate-limited by the four-at-a-time rule and the two-minute deadline.
 - **A backslash from a server is printed as it is.** Control characters are shown as a backslash and three digits, so a server that sends the text `\027` produces output that looks like an escaped control character. It misleads nobody's terminal, only a careful reader. (Audit 1, low.)
 - **`v6blick check --help` exits `0`.** In CI, pass an untrusted host after `--`, as shown in [Who it is for](#who-it-is-for). (Audit 1, low.)
+- **The page test has had no audit.** `v6blick page` (the proxy, the WebSocket and DevTools clients, and starting the browser) was written after audit 1. It follows the rules that audit established: the same address rule, limits on every size and count, a deadline on every step, and everything from a page made safe to print. A red team has not attacked it yet.
+- **Other programs on this machine can use the proxy while a page loads.** It listens on the loopback address on a random port for the seconds a page load takes, and will connect them only to hosts the page asked for.
 - **Not attacked yet:** the live DNS path under load (retries, the rate limiter, spoofed answers from off the path), a TLS server that stalls after the handshake, and the DNS and TLS libraries themselves, which were fuzzed through v6blick and not reviewed. Dependencies had no known advisory on 2026-11-14 (`cargo audit`, 121 crates).
 
 ### Audit 1: version 0.1.0
@@ -746,7 +800,9 @@ Test your own sites, or sites you have permission to test. A check is ordinary t
 
 ## Privacy
 
-v6blick stores nothing and reports to nobody. It keeps no history, writes no file, and has no telemetry. What it sends is what a check needs: DNS queries to the root servers and the nameservers on the way to the host, and plain `GET` requests to the host and to where its redirects lead, with a `User-Agent` that names v6blick. The JSON output holds the host's public addresses and certificate fingerprints, and nothing about the machine that ran the check except that IPv4 and IPv6 work there.
+v6blick stores nothing and reports to nobody. It keeps no history, writes no file, and has no telemetry. What `check` sends is what a check needs: DNS queries to the root servers and the nameservers on the way to the host, and plain `GET` requests to the host and to where its redirects lead, with a `User-Agent` that names v6blick. The JSON output holds the host's public addresses and certificate fingerprints, and nothing about the machine that ran the check except that IPv4 and IPv6 work there.
+
+`v6blick page` loads the page in your own Chrome or Chromium, so the page and its third parties see an ordinary visit from a headless browser, with a new, empty profile: no cookies, no logins, no history, and the profile is deleted afterwards. The browser's own background traffic to its maker (update checks, sign-in services) is refused by the proxy and goes nowhere.
 
 `v6blick doctor` prints this machine's own IPv6 address on your screen, and sends it nowhere.
 

@@ -417,7 +417,9 @@ fn findings_of(w: &mut String, st: &Style, all: &[Finding]) {
         );
         for finding in group {
             let _ = writeln!(w, "    {}  {}", st.bold(&finding.check_id), finding.name);
-            let _ = writeln!(w, "      {}", finding.summary);
+            for line in wrap(&finding.summary, 96) {
+                let _ = writeln!(w, "      {line}");
+            }
             for line in evidence_lines(&finding.evidence) {
                 let _ = writeln!(w, "      {}", st.dim(&line));
             }

@@ -80,8 +80,8 @@ pub fn check(obs: &PageObservation) -> Vec<Finding> {
             };
             let (why, _) = reason(load, &host);
             let summary = match &redirected_from {
-                Some(from) => format!(
-                    "the page cannot be loaded on {}: {from} redirects to {url}, and {why}",
+                Some(_) => format!(
+                    "the page cannot be loaded on {}: it redirects to {url}, and {why}",
                     network(mode)
                 ),
                 None => format!("the page cannot be loaded on {}: {why}", network(mode)),
@@ -433,7 +433,7 @@ mod tests {
         assert_eq!(findings[0].name, "example.org");
         assert_eq!(
             findings[0].summary,
-            "the page cannot be loaded on an IPv6-only network: https://www.example.org/ redirects to https://example.org/, and example.org has no IPv6 address"
+            "the page cannot be loaded on an IPv6-only network: it redirects to https://example.org/, and example.org has no IPv6 address"
         );
     }
 

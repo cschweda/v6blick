@@ -1,27 +1,27 @@
 # v6blick
 
-> v6blick is a command-line tool, written in Rust, that tests whether a website works for someone who has no IPv4. Phase 0 works: `check` and `doctor`, ten checks, text and JSON output. There are no ready-built binaries yet; build it with `cargo install --git https://github.com/cschweda/v6blick` (tag `v0.1.0`, Rust 1.88 or later). It needs working IPv6 on the machine it runs on; GitHub's hosted runners have none by default.
+> v6blick is a command-line tool, written in Rust, that tests whether a website works for someone who has no IPv4. Phases 0 and 1 work: `check`, `page` and `doctor`, fourteen checks, text and JSON output. There are no ready-built binaries yet; build it with `cargo install --git https://github.com/cschweda/v6blick` (tag `v0.1.0`, Rust 1.88 or later). It needs working IPv6 on the machine it runs on; GitHub's hosted runners have none by default.
 
-Today v6blick connects to a host over IPv4 and over IPv6 separately and compares the two. Planned: load a whole page from three kinds of network, `dual` (an ordinary connection), `nat64` (IPv6-only with a NAT64 translator, simulated) and `v6only` (IPv6-only with no translator), and report what breaks in each. Findings have stable check IDs, four severities (critical, warning, notice, info), a plain statement with every finding of what it means and how to fix it, JSON output and exit codes for CI (0 clean, 1 notices or warnings, 2 critical, 3 the run failed).
+`check` connects to a host over IPv4 and over IPv6 separately and compares the two. `page` loads a whole page in an installed Chrome or Chromium through a local proxy, in `dual` (an ordinary connection) and in `v6only` (IPv6-only with no translator), and reports what works in the first and fails in the second. Planned: `nat64` (IPv6-only with a NAT64 translator, simulated). Findings have stable check IDs, four severities (critical, warning, notice, info), a plain statement with every finding of what it means and how to fix it, JSON output and exit codes for CI (0 clean, 1 notices or warnings, 2 critical, 3 the run failed).
 
 ## Commands
 
 - `v6blick check <host-or-url>`: DNS and connection checks over IPv4 and IPv6 separately, and a comparison of the two. No browser. Works today.
 - `v6blick doctor`: whether this machine has working IPv6 and whether Chrome or Chromium is installed. Works today.
-- `v6blick page <url>`: loads the page in an installed Chrome through a local proxy that enforces each network mode, and lists every resource that fails. Planned.
+- `v6blick page <url>`: loads the page in an installed Chrome through a local proxy that enforces each network mode, and lists every request that fails without IPv4, by host, marked as the page's own site or a third party. Works today for `v6only`; `nat64` is planned.
 
 ## Checks
 
 - ADR-01 to ADR-03: addresses (no AAAA record, an unusable AAAA record, a zone that cannot be resolved over IPv6 alone)
 - RCH-01 to RCH-04: reachability (a published AAAA that nothing answers, TLS failing over IPv6 only, slow IPv6 connects, a long wait before IPv4 takes over)
 - EQV-01 to EQV-03: equivalence (a different certificate, status, redirect or body over IPv6)
-- PGE-01 to PGE-04: page resources that fail without IPv4 (planned, needs a browser)
+- PGE-01 to PGE-04: the page itself, or resources of it, that fail without IPv4 (works today, needs a browser)
 - LIT-01 to LIT-02: literal IPv4 addresses in a page (planned, needs a browser)
 - MTU-01: large responses that stall over IPv6 only (planned)
 
 ## Security
 
-One red team and blue team audit so far, of version 0.1.0 on 2026-11-14: no critical or high finding, five medium and twelve low; all fixed except two low items, which are documented. The record is in the README under "Security audits".
+One red team and blue team audit so far, of version 0.1.0 on 2026-11-14: no critical or high finding, five medium and twelve low; all fixed except two low items, which are documented. The page test is newer than that audit and has not been audited. The record is in the README under "Security audits".
 
 ## Links
 

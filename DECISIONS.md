@@ -81,6 +81,29 @@ Choices made during implementation where `DESIGN.md` was silent or loose. One li
 - No line of the text output begins with an address.
 - The red team's attack tests are kept as regression tests in `tests/redteam_*.rs`.
 
+## Phase 1
+
+- The browser is controlled by a DevTools client written in this repository, over a WebSocket written in this repository, with no new dependency for either (chosen by the author on 2026-11-14, settling open question 1 of the design).
+- First party and third party are told apart by the Public Suffix List, through the `psl` crate (chosen by the author). It brings one further crate, `psl-types`.
+- Every page run loads the page in `dual` first, as the baseline, in a browser and behind a proxy of its own. A request counts against `v6only` only when it worked in `dual`. This is an addition to the design's Phase 1 (agreed with the author).
+- A page that does not load in `dual` is a failed run, since there is nothing to compare.
+- `page` takes a full address, or a host name, which is loaded over `https://`. `--mode` has one value in this phase, `v6only`, which is also the default.
+- In `dual` the proxy tries IPv6 first and gives it 2 s before IPv4, as a browser that prefers IPv6 falls back. In `v6only` it tries IPv6 only: a host with no IPv6 address is refused, and so is a literal IPv4 address.
+- The proxy uses the prober's address rule, and tries at most four addresses of a host.
+- A refused HTTPS tunnel is answered with a 502, which the browser reports as a failed connection. A refused plain request is dropped without an answer, because an answer from the proxy would look like the site's own page.
+- A plain HTTP connection through the proxy carries one request and is then closed, so that each host is decided for itself.
+- The proxy carries only what the page asked for. The driver holds every request in the browser (the DevTools `Fetch` domain) until its host has been announced to the proxy; a connection for a host nobody announced waits 1.5 s and is then refused. This keeps the browser's own traffic (update checks, sign-in services) from leaving the machine and from being counted.
+- The navigation is started without waiting for its answer, and frames and workers are set up the same way: while a request is held, the browser puts other commands off.
+- Frames of other sites and workers are attached to as they start, held until their network events are on, so that their requests are seen too.
+- The page counts as settled after its load event, when nothing is under way and 1.5 s have passed without a network event; a page that keeps a request open settles after 3 s of quiet. A load has 30 s, a run 150 s.
+- The browser repeats a failed navigation for its error page and cancels that itself; a cancelled request is not the page and is not counted.
+- One resolver serves the whole page run, one lookup at a time, each host once, spreading its queries over the servers of each zone. A page run may send 5,000 DNS queries.
+- The browser gets a fresh profile directory that only the user can read, deleted when the load ends, and cannot outlive the call that started it.
+- PGE-01 is reported for the host that failed: the page's own, or the one it redirects to. A resource redirected to an unreachable host is PGE-04; the page itself redirected to one is PGE-01.
+- PGE-02 to PGE-04 are one finding per host, with the number of requests. A literal IPv4 address is left to the LIT checks of Phase 2.
+- The summary of a finding is wrapped at 96 characters in the text output.
+- At most 2,000 requests of a page are kept.
+
 ### Project site
 
 - The site is one static page in `docs/`, served by GitHub Pages from `main`, at https://cschweda.github.io/v6blick/ until the design's v6blick.zoneblick.com is set up (asked for by the author).
