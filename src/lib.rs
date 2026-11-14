@@ -10,6 +10,7 @@
 //! - [`output`]: human and JSON rendering, and the exit code
 //! - [`cli`]: argument parsing and the commands
 
+pub mod checks;
 pub mod observe;
 pub mod probe;
 pub mod resolve;
