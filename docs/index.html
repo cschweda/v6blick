@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>v6blick</title>
-<meta name="description" content="v6blick tests whether a website works for someone who has no IPv4. It loads a host or a whole page from three kinds of network and names every resource that breaks.">
+<meta name="description" content="v6blick tests whether a website works for someone who has no IPv4. It connects over IPv4 and IPv6 separately, compares the two, and says what breaks and how to fix it.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cschweda.github.io/v6blick/">
 <link rel="canonical" href="https://cschweda.github.io/v6blick/">
 <meta property="og:title" content="v6blick: does your site work without IPv4? An IPv6 readiness test, written in Rust">
-<meta property="og:description" content="An IPv6 readiness test for websites, written in Rust. It loads a host or a whole page from three kinds of network and names every resource that breaks when there is no IPv4.">
+<meta property="og:description" content="An IPv6 readiness test for websites, written in Rust. It connects to a site over IPv4 and IPv6 separately, compares the two, and says what breaks without IPv4 and how to fix it.">
 <meta property="og:image" content="https://cschweda.github.io/v6blick/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="author" content="Christopher Schweda">
 <meta property="article:published_time" content="2026-11-14T17:00:00Z">
-<meta property="article:modified_time" content="2026-11-14T18:00:00Z">
+<meta property="article:modified_time" content="2026-11-14T19:00:00Z">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -29,7 +29,7 @@
       "@id": "https://cschweda.github.io/v6blick/#website",
       "url": "https://cschweda.github.io/v6blick/",
       "name": "v6blick",
-      "description": "v6blick tests whether a website works for someone who has no IPv4. It loads a host or a whole page from three kinds of network and names every resource that breaks.",
+      "description": "v6blick tests whether a website works for someone who has no IPv4. It connects over IPv4 and IPv6 separately, compares the two, and says what breaks and how to fix it.",
       "inLanguage": "en",
       "author": {
         "@type": "Person",
@@ -42,7 +42,7 @@
       "@id": "https://cschweda.github.io/v6blick/#webpage",
       "url": "https://cschweda.github.io/v6blick/",
       "name": "v6blick",
-      "description": "v6blick tests whether a website works for someone who has no IPv4. It loads a host or a whole page from three kinds of network and names every resource that breaks.",
+      "description": "v6blick tests whether a website works for someone who has no IPv4. It connects over IPv4 and IPv6 separately, compares the two, and says what breaks and how to fix it.",
       "inLanguage": "en",
       "isPartOf": {
         "@id": "https://cschweda.github.io/v6blick/#website"
@@ -68,7 +68,7 @@
       "@type": "SoftwareSourceCode",
       "@id": "https://cschweda.github.io/v6blick/#software",
       "name": "v6blick",
-      "description": "An IPv6 readiness test for websites, written in Rust. It connects to a host over IPv4 and IPv6 separately and compares the two, and loads a whole page from a dual-stack, a NAT64 and an IPv6-only network to list every resource that fails without IPv4.",
+      "description": "An IPv6 readiness test for websites, written in Rust. It connects to a host over IPv4 and IPv6 separately and compares the two. A whole-page test from a dual-stack, a NAT64 and an IPv6-only network is planned.",
       "url": "https://cschweda.github.io/v6blick/",
       "codeRepository": "https://github.com/cschweda/v6blick",
       "programmingLanguage": "Rust",
@@ -76,7 +76,7 @@
         "https://opensource.org/licenses/MIT",
         "https://www.apache.org/licenses/LICENSE-2.0"
       ],
-      "runtimePlatform": "Linux, macOS",
+      "runtimePlatform": "macOS",
       "author": {
         "@type": "Person",
         "name": "Christopher Schweda",
@@ -318,7 +318,7 @@ footer .grid{row-gap:24px}
     <div class="grid">
       <div class="label">IPv6 readiness test for websites</div>
       <h1>See your site <em>without IPv4.</em></h1>
-      <p class="lede">v6blick connects to a site over IPv4 and over IPv6 separately and compares the two. It tells you what breaks for a visitor who has no IPv4, what that means, and how to fix it. A whole-page test, down to the one third-party script with no IPv6 address, is being built.</p>
+      <p class="lede">v6blick connects to a site over IPv4 and over IPv6 separately and compares the two. It tells you what breaks for a visitor who has no IPv4, what that means, and how to fix it. A whole-page test, down to the one third-party script with no IPv6 address, is designed and comes next.</p>
       <div class="cta">
         <a class="btn primary" href="#output">See real output <span aria-hidden="true">&darr;</span></a>
         <a class="btn" href="https://github.com/cschweda/v6blick">Source on GitHub <span aria-hidden="true">&nearr;</span></a>
@@ -376,7 +376,7 @@ footer .grid{row-gap:24px}
         </div>
 
         <h3 class="h3big">What a finding tells you.</h3>
-        <p class="h3sub">Three questions are answered for every finding: how bad is it, what does it mean for a visitor, and can it be fixed. Every finding of the ten checks that work today can be fixed by whoever runs the site's DNS or its servers.</p>
+        <p class="h3sub">Three questions are answered for every finding: how bad is it, what does it mean for a visitor, and can it be fixed. Every finding of the ten checks that work today is about the site's own names and servers, so whoever runs its DNS or hosting can act on it, though that may mean a change at a provider.</p>
         <ul class="cad">
           <li><b>Critical</b><p>Broken now for visitors who use IPv6: a published address that nothing answers, or a secure connection that fails over IPv6 only. Fix it first. Exit code 2.</p></li>
           <li><b>Warning</b><p>Wrong or missing for IPv6: visitors without IPv4 are affected, and it can be fixed. No AAAA record, another certificate, a redirect that leads nowhere. Exit code 1.</p></li>
@@ -393,7 +393,7 @@ footer .grid{row-gap:24px}
       <div class="body">
         <h2>The fault your own browser hides.</h2>
         <p class="define">A browser that cannot reach a site over IPv6 quietly tries again over IPv4. A visitor who has no IPv4 gets no second try.</p>
-        <p class="intro">A growing share of clients have no IPv4 address of their own. They reach the IPv4 internet through a translator, or not at all. From a dual-stack connection, which is what most site owners have, a broken IPv6 setup looks exactly like a working one.</p>
+        <p class="intro">A growing share of clients have no IPv4 address of their own. They reach the IPv4 internet through a translator, or not at all. From a dual-stack connection, a broken IPv6 setup looks exactly like a working one.</p>
 
         <div class="drift">
           <div>
@@ -418,8 +418,8 @@ footer .grid{row-gap:24px}
         <h3 class="h3big">How common it is.</h3>
         <p class="h3sub">Published measurements, not ours. Sources are in the design document.</p>
         <ul class="cad">
-          <li><b>12.5%</b><p>of the top 100,000 sites were rated fully IPv6-ready in a 2025 study that used full browser page loads.</p></li>
-          <li><b>67%</b><p>of first-party domains support IPv6, by Internet Society measurements.</p></li>
+          <li><b>12.6%</b><p>of the top 100,000 websites qualify as fully IPv6-ready, in a 2025 study by Thottungal Valapu and Heidemann. The rest rely on resources that are IPv4-only.</p></li>
+          <li><b>67%</b><p>of the domains pages are first loaded from support IPv6, by Internet Society Pulse measurements.</p></li>
           <li><b>47%</b><p>of the third-party domains those sites depend on support IPv6. This is where most pages fail.</p></li>
         </ul>
       </div>
@@ -439,13 +439,13 @@ footer .grid{row-gap:24px}
         </ul>
 
         <h3 class="h3big">NAT64, simulated honestly.</h3>
-        <p class="h3sub">A real NAT64 network lets a client reach an IPv4-only hostname, because the network's DNS invents an IPv6 address for it. It does not help with an IPv4 address used directly, because no DNS lookup happens. v6blick applies exactly that rule, with no gateway and no special network.</p>
+        <p class="h3sub">A real NAT64 network lets a client reach an IPv4-only hostname, because the network's DNS invents an IPv6 address for it. It does not help with an IPv4 address used directly, because no DNS lookup happens. v6blick will apply exactly that rule, with no gateway and no special network.</p>
         <ul class="cad">
           <li><b>A hostname with an IPv6 address</b><p>Connect over IPv6.</p></li>
           <li><b>A hostname with only an IPv4 address</b><p>Allowed, and marked "reached through translation".</p></li>
           <li><b>A literal IPv4 address</b><p>Refused, and reported.</p></li>
         </ul>
-        <p class="limits"><strong>What the simulation is not.</strong> It does not reproduce DNS64 with DNSSEC, or a gateway's own faults; every report says so, and a <span class="mono">--nat64-prefix</span> option will point the tool at a real gateway. Many phones also run a second translator on the device (CLAT) that makes literal IPv4 addresses work, so a literal-address finding reads "fails on IPv6-only networks without CLAT".</p>
+        <p class="limits"><strong>What the simulation is not.</strong> It will not reproduce DNS64 with DNSSEC, or a gateway's own faults; every report will say so, and a <span class="mono">--nat64-prefix</span> option will point the tool at a real gateway. Many phones also run a second translator on the device (CLAT) that makes literal IPv4 addresses work, so a literal-address finding will read "fails on IPv6-only networks without CLAT".</p>
       </div>
     </div>
   </section>
@@ -496,7 +496,7 @@ footer .grid{row-gap:24px}
             <ul><li><b>01</b>A large response stalls over IPv6 only</li></ul>
           </article>
         </div>
-        <p class="status"><b>Third parties</b><span>A failure at a third-party host is a notice, not a warning, because the site's owner cannot fix it, only replace or self-host it. Failures are grouped by registrable domain, first party first, so the list reads as a list of suppliers.</span></p>
+        <p class="status"><b>Third parties</b><span>In the page test, a failure at a third-party host will be a notice, not a warning, because the site's owner cannot fix it, only replace or self-host it. Failures will be grouped by registrable domain, first party first, so the list reads as a list of suppliers.</span></p>
       </div>
     </div>
   </section>
@@ -508,11 +508,11 @@ footer .grid{row-gap:24px}
         <h2>How a check works.</h2>
         <p class="intro">Five steps, once, from the command line. No hosted service, no account, no test servers to deploy.</p>
         <ol class="steps">
-          <li><span class="mono">1</span><b>Look up the host</b><p>A and AAAA records, following CNAMEs, resolved from the root servers. No recursive resolver sits in the middle.</p></li>
+          <li><span class="mono">1</span><b>Look up the host</b><p>A and AAAA records, following CNAMEs, resolved from the root servers, with no recursive resolver in the middle.</p></li>
           <li><span class="mono">2</span><b>Walk again, IPv6 only</b><p>Resolve the host's zone from the root using only IPv6 to reach each nameserver, and record the level at which that fails.</p></li>
           <li><span class="mono">3</span><b>Probe each family alone</b><p>Connect, complete TLS and send one GET over IPv4, then the same over IPv6. Record the timings, the certificate, the status, each redirect and the body.</p></li>
           <li><span class="mono">4</span><b>Compare</b><p>Checks are pure rules over what was recorded, so results are repeatable and every check is tested offline.</p></li>
-          <li><span class="mono">5</span><b>Report</b><p>Findings by severity as text or JSON, and an exit code for CI: 0 clean, 1 warnings, 2 critical, 3 the run failed.</p></li>
+          <li><span class="mono">5</span><b>Report</b><p>Findings by severity as text or JSON, and an exit code for CI: 0 clean, 1 notices or warnings, 2 critical, 3 the run failed.</p></li>
         </ol>
 
         <h3 class="h3big">The page test adds a browser and a proxy.</h3>
@@ -527,16 +527,16 @@ footer .grid{row-gap:24px}
       <div class="num">06</div>
       <div class="body">
         <h2>How it differs from existing tools.</h2>
-        <p class="intro">The idea is not new. What is missing is a tool you run yourself, against a local build or a live URL, that covers the whole page.</p>
+        <p class="intro">The idea is not new. What is missing is one command you run yourself, against a local build or a live URL, with no servers to set up.</p>
         <div class="tablebox" tabindex="0" role="region" aria-label="Comparison of v6blick with existing tools">
           <table class="cmp">
             <thead><tr><th scope="col">Tool</th><th scope="col">Tests the site</th><th scope="col">IPv4 against IPv6</th><th scope="col">Whole page</th><th scope="col">NAT64</th><th scope="col">Runs locally and in CI</th></tr></thead>
             <tbody>
-              <tr><th scope="row">NAT64Check (Internet Society)</th><td class="y">Yes</td><td class="y">Yes</td><td>The document</td><td class="y">A real gateway</td><td>No, hosted; needs four servers</td></tr>
+              <tr><th scope="row">NAT64Check (Internet Society)</th><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes, counts the resources that load</td><td class="y">A real gateway</td><td>Hosted, or four servers of your own</td></tr>
               <tr><th scope="row">IPv6 Web Resource Checker (IETF 124 hackathon)</th><td class="y">Yes</td><td>No</td><td class="y">Yes, with a browser</td><td>No</td><td>A hackathon project</td></tr>
               <tr><th scope="row">test-ipv6.com and similar</th><td>No, the visitor's connection</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
               <tr><th scope="row">zoneblick IPV checks (proposed)</th><td>A zone's names</td><td class="y">Yes, over time</td><td>No</td><td>No</td><td class="y">Yes</td></tr>
-              <tr class="us"><th scope="row">v6blick</th><td>A host or a URL</td><td>Certificate, status, redirect, body, timing</td><td>Every resource, by supplier</td><td>Simulated; a real gateway as an option</td><td>One binary</td></tr>
+              <tr class="us"><th scope="row">v6blick</th><td>A host or a URL</td><td>Certificate, status, redirect, body, timing</td><td>Planned: every resource, by supplier</td><td>Planned: simulated; a real gateway as an option</td><td>One binary</td></tr>
             </tbody>
           </table>
         </div>

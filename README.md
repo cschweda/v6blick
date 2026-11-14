@@ -2,7 +2,7 @@
 
 Does your site work for someone who has no IPv4?
 
-v6blick tests a host or a whole page from three kinds of network: an ordinary dual-stack connection, an IPv6-only network with a NAT64 translator, and an IPv6-only network with no translator. It reports what breaks in each, down to the one third-party script that has no IPv6 address.
+v6blick connects to a site over IPv4 and over IPv6 separately, compares the two, and reports what breaks for a visitor without IPv4, what that means and how to fix it. That part works today. The plan goes further: load a whole page from three kinds of network (an ordinary dual-stack connection, an IPv6-only network with a NAT64 translator, and an IPv6-only network with no translator) and report what breaks in each, down to the one third-party script that has no IPv6 address. That part is designed and not built.
 
 **Status:** early. Phase 0 works: `v6blick check` looks a host up, connects to it over IPv4 and over IPv6 separately, compares the two and reports what differs, with ten checks, text and JSON output and exit codes for CI. `v6blick doctor` says whether this machine can run it. The whole-page test (`v6blick page`, the three networks) is designed and not built yet; sections below say which parts are planned. There is no release yet: build it from source.
 
@@ -42,13 +42,13 @@ A growing share of clients have no IPv4 address of their own: many mobile networ
 
 The failures hide behind fallback. A browser on a dual-stack connection that cannot reach a site over IPv6 quietly retries over IPv4, so the site's owner never sees the fault. The owner's own connection is the one place where the problem cannot be seen.
 
-The gap is wide. One 2025 study that used full browser page loads rated 12.5% of the top 100,000 sites as fully IPv6-ready. Internet Society measurements put IPv6 support at 67% for first-party domains and at 47% for the third-party domains they depend on. A site can publish an AAAA record and still break, because a font, a script or a tracking pixel comes from a host that has none.
+The gap is wide. A 2025 study (Thottungal Valapu and Heidemann, "Towards a Non-Binary View of IPv6 Adoption") found that only 12.6% of the top 100,000 websites qualify as fully IPv6-ready, because the rest rely on IPv4-only resources. Internet Society Pulse measurements put IPv6 support at 67% for the domains pages are first loaded from, and at 47% for the third-party domains they depend on. A site can publish an AAAA record and still break, because a font, a script or a tracking pixel comes from a host that has none.
 
 Existing tools leave a gap:
 
 | Tool | What it does | What is missing |
 |---|---|---|
-| NAT64Check (Internet Society) | Loads a URL over IPv4, IPv6 and NAT64 and compares the results | A hosted service from 2017; its design needs four servers |
+| NAT64Check (Internet Society) | Loads a URL over IPv4, IPv6 and NAT64 and compares the results, including whether images, stylesheets and scripts load | A hosted service (2017, version 2 in 2019); running your own takes four servers |
 | IETF 124 hackathon "IPv6 Web Resource Checker" (2025) | Checks a page's resources with a real browser | A hackathon project |
 | test-ipv6.com and similar | Tells a visitor about their own connection | Tests the client, not the site |
 
@@ -107,11 +107,11 @@ Every finding answers three questions: how bad is it, what does it mean for a vi
 | **notice** | Worth a look. It may be harmless, or chance in one measurement. | `1` |
 | **info** | For your information; nothing to fix. | `0` |
 
-Under each finding the text output has two short paragraphs, `Means:` and `Fix:`. The JSON output has the same text as `meaning` and `fix`. Every finding of the ten checks that work today can be fixed by whoever runs the site's DNS or its servers; none depends on a third party.
+Under each finding the text output has two short paragraphs, `Means:` and `Fix:`. The JSON output has the same text as `meaning` and `fix`. Every finding of the ten checks that work today is about the site's own names and servers, so whoever runs its DNS or hosting can act on it. That may still mean changing a setting at a hosting or DNS provider, or moving away from one that has no IPv6.
 
 | ID | What it means for visitors | How to fix it |
 |---|---|---|
-| ADR-01 | On an IPv6-only network they cannot reach the host directly. With a NAT64 translator, as on many mobile networks, they still can. | Publish an AAAA record. Most hosts and CDNs offer IPv6 as a setting. |
+| ADR-01 | On an IPv6-only network they cannot reach the host directly. With a NAT64 translator, as on many mobile networks, they still can. | Publish an AAAA record. Many hosts and CDNs offer IPv6 as a setting. |
 | ADR-02 | Clients that prefer IPv6 try this address first and fail. | Replace the record with the server's public IPv6 address, or remove it. |
 | ADR-03 | A resolver that has only IPv6 cannot look the name up at all. | Give the zone's nameservers IPv6 addresses, or move the zone to a DNS host that has them. |
 | RCH-01 | Visitors without IPv4 cannot reach the site; everyone else waits for the fallback. | Make the server listen on the address and open ports 80 and 443 over IPv6, or remove the AAAA record until it does. |
@@ -124,7 +124,7 @@ Under each finding the text output has two short paragraphs, `Means:` and `Fix:`
 
 ## Try it
 
-Needs a stable [Rust toolchain](https://rustup.rs). There are no ready-built binaries yet.
+Needs a stable [Rust toolchain](https://rustup.rs). There are no ready-built binaries yet. v6blick is developed and tested on macOS. It is written to run on Linux as well, where it has not been run yet, and it is untested on Windows.
 
 ```
 cargo install --git https://github.com/cschweda/v6blick
@@ -143,7 +143,7 @@ cd v6blick
 cargo run -- check metaincognita.com
 ```
 
-A check takes a second or two. It sends a few dozen DNS queries and one `GET` to each address of the host on each port, at most four addresses per family.
+A check takes from one to about five seconds. Measured on 14 November 2026: `metaincognita.com` took 9 DNS queries and 6 requests in under a second; `www.metaincognita.com`, an alias that redirects to another host, took 58 DNS queries and 16 requests in five seconds. Each address of the host, at most four per family, gets one `GET` on each port, and one more for each redirect that is followed.
 
 ## Who it is for
 
@@ -242,7 +242,7 @@ A bare host name is probed as `https://host/` and `http://host/`. A full address
 
 ### What `check` does
 
-1. **Looks up the host.** A and AAAA records, following CNAMEs. v6blick resolves from the root servers itself and asks no recursive resolver.
+1. **Looks up the host.** A and AAAA records, following CNAMEs. v6blick resolves from the root servers itself and asks no recursive resolver. There is one exception: with `--allow-private`, a name the public DNS says does not exist is looked up with this machine's own resolver.
 2. **Walks the delegation over IPv6 only.** It resolves the host's zone from the root again, this time using only IPv6 to reach each nameserver, and records the level at which that fails, if it does.
 3. **Probes each address family on its own.** For each address, at most four per family: a TCP connection to port 443 and to port 80, a TLS handshake, and one HTTP `GET`. It records the time to connect, the certificate, the status, each redirect, and the size and two hashes of the body. Redirects are followed, at most five, and stay in the address family they started in.
 4. **Runs the checks.** Each check is a function over what was recorded. No check touches the network.
@@ -320,7 +320,7 @@ These are zoneblick's exit codes. A bad command line exits `3`, not `2`.
 
 ## JSON output
 
-`v6blick check <host> --json` prints one document on stdout: first what was recorded, then what the checks made of it. Field order is fixed, so the same observation always renders the same bytes. `schema_version` changes only when a field is removed, renamed or changes meaning.
+`v6blick check <host> --json` prints one document on stdout: first what was recorded, then what the checks made of it. The example below is abridged: one probe of eight, and `...` where values were cut. Field order is fixed, so the same observation always renders the same bytes. `schema_version` changes only when a field is removed, renamed or changes meaning.
 
 ```json
 {
@@ -491,7 +491,7 @@ v6blick follows zoneblick's habits: stable check IDs, the same four severities, 
 | 2 | `nat64` simulation and LIT checks; all three modes in one run | Planned |
 | 3 | HTML report, `--urls`, a GitHub Action | Planned |
 | 4 | MTU-01 | Planned |
-| 5 | Packaging and the project site at v6blick.zoneblick.com | Planned |
+| 5 | Packaging and the project site at v6blick.zoneblick.com | Planned. Until then the site is at https://cschweda.github.io/v6blick/ |
 
 ## Development
 
@@ -525,12 +525,12 @@ cargo test --test check record_fixtures -- --ignored       # record the fixtures
 
 ## Security audits
 
-This section is the record of every security audit of v6blick, newest first; older audits will be kept here in short form. They are reviews by the project itself, not third-party audits. Each has a red team (an independent reviewer reading the code as an attacker, plus hands-on attacks on the parsers and on running instances) and a blue team (the fixes, each with a regression test).
+This section is the record of every security audit of v6blick, newest first; older audits will be kept here in short form. They are reviews by the project itself, not third-party audits, and both teams are AI models working for the author. The red team is a separate reviewer that is given the code and not the notes of whoever wrote it; it reads the code as an attacker and attacks the parsers and running checks hands-on. The blue team makes the fixes, with a regression test for each fix that changes code.
 
 | Audit | Version audited | Date | Found | Fixed in |
 |---|---|---|---|---|
 | [1](#audit-1-version-010) | 0.1.0 (commit `595371b`) | 2026-11-14 | 0 critical, 0 high, 5 medium, 12 low | the commit after it; 2 low items left open |
-| [Commit reviews](#automated-review-of-each-commit) | every commit | continuous | 1 medium | the next commit |
+| [Commit reviews](#automated-review-of-commits) | commits during Phase 0 | 2026-11-14 | 1 medium | the next commit |
 
 **Who the attackers are**
 
@@ -596,9 +596,9 @@ Audited on 2026-11-14, the day Phase 0 was finished, at commit `595371b`. All fi
 - **Output.** Escape sequences, direction overrides, line breaks and bytes that are not UTF-8 from a server or from DNS did not reach the text output, and the JSON always parsed.
 - **The resolver.** Loops, long alias chains and zones that depend on each other all ended in under 100 queries.
 
-### Automated review of each commit
+### Automated review of commits
 
-Every commit is read by an automated security reviewer before work goes on.
+While Phase 0 was written, an automated security reviewer read commits in the background and reported when it found something. It reported once. It is a tool of the session the code was written in, not a check that runs on the repository, so a commit made elsewhere is not covered.
 
 | Severity | Finding | Fix |
 |---|---|---|

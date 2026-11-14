@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "host": "www.metaincognita.com.",
   "target": "www.metaincognita.com",
-  "started_at_unix": 1794679205,
+  "started_at_unix": 1794679874,
   "vantage": {
     "ipv4": true,
     "ipv6": true
@@ -266,11 +266,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 33
+        "ms": 37
       },
       "tls": {
         "result": "ok",
-        "ms": 54,
+        "ms": 33,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -313,11 +313,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 41
+        "ms": 40
       },
       "tls": {
         "result": "ok",
-        "ms": 61,
+        "ms": 58,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -360,11 +360,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 34
+        "ms": 39
       },
       "tls": {
         "result": "ok",
-        "ms": 60,
+        "ms": 38,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -402,11 +402,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 35
+        "ms": 38
       },
       "tls": {
         "result": "ok",
-        "ms": 57,
+        "ms": 37,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -444,7 +444,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 36
+        "ms": 33
       },
       "exchanges": [
         {
@@ -489,7 +489,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 31
+        "ms": 35
       },
       "exchanges": [
         {
@@ -534,7 +534,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 31
+        "ms": 33
       },
       "exchanges": [
         {
@@ -574,7 +574,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 32
+        "ms": 34
       },
       "exchanges": [
         {

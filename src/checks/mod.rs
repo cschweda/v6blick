@@ -72,14 +72,14 @@ pub struct Advice {
     pub fix: &'static str,
 }
 
-/// The advice for a check ID. Every Phase 0 finding can be fixed by
-/// whoever runs the site's DNS or its servers; none depends on a third
-/// party.
+/// The advice for a check ID. Every Phase 0 finding is about the site's
+/// own names and servers, so whoever runs its DNS or hosting can act on
+/// it, though that may mean a change at a provider.
 pub fn advice(check_id: &str) -> Advice {
     let (meaning, fix) = match check_id {
         "ADR-01" => (
             "Visitors on an IPv6-only network cannot reach this host directly. Those whose network has a NAT64 translator, as many mobile networks do, still can; those without one cannot.",
-            "Publish an AAAA record for the host. Most hosting providers and CDNs offer IPv6 as a setting; if yours has none for this name, put the name behind a service that does.",
+            "Publish an AAAA record for the host. Many hosting providers and CDNs offer IPv6 as a setting; if yours has none for this name, put the name behind a service that does.",
         ),
         "ADR-02" => (
             "Clients that prefer IPv6 try this address first and fail. They reach the site only after falling back to IPv4, or not at all.",
