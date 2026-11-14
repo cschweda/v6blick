@@ -39,13 +39,13 @@ A growing share of clients have no IPv4 address of their own: many mobile networ
 
 Failures hide behind fallback. A browser on a dual-stack connection that cannot reach a site over IPv6 quietly retries over IPv4, so the owner never sees the fault.
 
-Published measurements show how common the gap is. One 2025 study using full browser page loads rated 12.5% of the top 100,000 sites as fully IPv6-ready. Internet Society measurements put IPv6 support at 67% for first-party domains and 47% for the third-party domains they depend on.
+Published measurements show how common the gap is. A 2025 study (Thottungal Valapu and Heidemann, "Towards a Non-Binary View of IPv6 Adoption") found that only 12.6% of the top 100,000 websites qualify as fully IPv6-ready, because the rest rely on IPv4-only resources. Internet Society Pulse measurements put IPv6 support at 67% for the domains pages are first loaded from and 47% for the third-party domains they depend on.
 
 ### Prior art
 
 | Tool | What it does | Why it leaves a gap |
 |---|---|---|
-| NAT64Check (Internet Society) | Loads a URL over IPv4, IPv6 and NAT64 and compares the results | A hosted service from 2017; its design needs four servers |
+| NAT64Check (Internet Society) | Loads a URL over IPv4, IPv6 and NAT64 and compares the results, including whether images, stylesheets and scripts load | A hosted service (2017, version 2 in 2019); running your own takes four servers |
 | IETF 124 hackathon "IPv6 Web Resource Checker" (2025) | Checks a page's resources with a real browser | A hackathon project; confirms that a real browser is needed |
 | test-ipv6.com and similar | Tells a visitor about their own connection | Tests the client, not the site |
 | zoneblick `IPV` group (proposed) | Watches a zone's names for IPv6 faults over time | Works on names and servers, not on whole pages |
@@ -288,5 +288,5 @@ Phase 0 is useful on its own and needs no browser.
 - zoneblick — https://zoneblick.com
 - NAT64Check v2 (Internet Society) — https://www.internetsociety.org/blog/2019/01/nat64check-version-2-is-launched/
 - IETF 124 hackathon, IPv6 Web Resource Checker — https://datatracker.ietf.org/meeting/124/materials/slides-124-hackathon-sessd-ipv6-web-resource-checker-00
-- IPv6 readiness of top sites (arXiv 2507.11678) — https://web3.arxiv.org/pdf/2507.11678
+- Towards a Non-Binary View of IPv6 Adoption (arXiv 2507.11678) — https://arxiv.org/abs/2507.11678
 - Internet Society Pulse, IPv6 readiness beneath the surface — https://pulse.internetsociety.org/en/blog/the-web-looks-ipv6-ready-until-you-look-beneath-the-surface/
