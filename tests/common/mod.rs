@@ -51,9 +51,11 @@ pub fn cname(owner: &str, target: &str) -> Record {
 }
 
 pub fn soa(owner: &str) -> Record {
+    // The root's own name is a lone dot, which nothing can be put before.
+    let zone = if owner == "." { "" } else { owner };
     let rdata = SOA::new(
-        name(&format!("ns1.{owner}")),
-        name(&format!("hostmaster.{owner}")),
+        name(&format!("ns1.{zone}")),
+        name(&format!("hostmaster.{zone}")),
         1,
         7200,
         3600,

@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0",
+  "host": "localhost.",
+  "target": "https://localhost:63015/",
+  "started_at_unix": 1794677347,
+  "vantage": {
+    "ipv4": true,
+    "ipv6": true
+  },
+  "lookup": {
+    "name": "localhost.",
+    "source": "system",
+    "cname_chain": [],
+    "a": {
+      "status": "answer",
+      "addresses": [
+        "127.0.0.1"
+      ]
+    },
+    "aaaa": {
+      "status": "answer",
+      "addresses": [
+        "::1"
+      ]
+    }
+  },
+  "ipv6_walks": [],
+  "probes": [
+    {
+      "family": "ipv4",
+      "address": "127.0.0.1",
+      "port": 63015,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 0
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 3,
+        "certificate": {
+          "sha256": "40dae93ef409537d53fda99ba956245828505fa549541f86ec642304f0bb4ad1",
+          "names": [
+            "*.v6blick.test",
+            "localhost",
+            "v6blick.test"
+          ],
+          "not_after_unix": 4948276828,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://localhost:63015/",
+          "address": "127.0.0.1",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 40,
+          "body_truncated": false,
+          "body_sha256": "03652bd21da4bf063eecf9bc37bd653630dea9449fab786d5c51a47b6550dc6b",
+          "shape_sha256": "ebe4f7d2b03de909612a2996999424194f895b19842e48be98a66c376c42353a"
+        }
+      ]
+    },
+    {
+      "family": "ipv6",
+      "address": "::1",
+      "port": 63015,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 0
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 4,
+        "certificate": {
+          "sha256": "c88ec84726c97dc4a56a8fe0571c3e5af094c5e502be24e9132aa9eb9f2daaad",
+          "names": [
+            "*.v6blick.test",
+            "localhost",
+            "v6blick.test"
+          ],
+          "not_after_unix": 4948276828,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://localhost:63015/",
+          "address": "::1",
+          "result": "response",
+          "status": 301,
+          "location": "https://localhost:63015/old",
+          "body_bytes": 0,
+          "body_truncated": false,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://localhost:63015/old",
+          "address": "::1",
+          "result": "response",
+          "status": 404,
+          "body_bytes": 9,
+          "body_truncated": false,
+          "body_sha256": "907ba78b4545338d3539683e63ecb51cf51c10adc9dabd86e92bd52339f298b9",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "check_id": "EQV-01",
+      "severity": "warning",
+      "name": "localhost.",
+      "summary": "https://localhost:63015 serves a different certificate over IPv6 than over IPv4",
+      "evidence": {
+        "kind": "certificate_mismatch",
+        "port": 63015,
+        "ipv4": [
+          {
+            "address": "127.0.0.1",
+            "sha256": "40dae93ef409537d53fda99ba956245828505fa549541f86ec642304f0bb4ad1",
+            "names": [
+              "*.v6blick.test",
+              "localhost",
+              "v6blick.test"
+            ],
+            "not_after_unix": 4948276828,
+            "covers_host": true
+          }
+        ],
+        "ipv6": [
+          {
+            "address": "::1",
+            "sha256": "c88ec84726c97dc4a56a8fe0571c3e5af094c5e502be24e9132aa9eb9f2daaad",
+            "names": [
+              "*.v6blick.test",
+              "localhost",
+              "v6blick.test"
+            ],
+            "not_after_unix": 4948276828,
+            "covers_host": true
+          }
+        ]
+      }
+    },
+    {
+      "check_id": "EQV-02",
+      "severity": "warning",
+      "name": "localhost.",
+      "summary": "https://localhost:63015/ answers 200 over IPv4 and 301 over IPv6",
+      "evidence": {
+        "kind": "response_mismatch",
+        "url": "https://localhost:63015/",
+        "ipv4": [
+          {
+            "address": "127.0.0.1",
+            "status": 200,
+            "ended": "page",
+            "final_url": "https://localhost:63015/",
+            "final_status": 200
+          }
+        ],
+        "ipv6": [
+          {
+            "address": "::1",
+            "status": 301,
+            "location": "https://localhost:63015/old",
+            "ended": "page",
+            "final_url": "https://localhost:63015/old",
+            "final_status": 404
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "critical": 0,
+    "warning": 2,
+    "notice": 0,
+    "info": 0
+  },
+  "exit_code": 1
+}

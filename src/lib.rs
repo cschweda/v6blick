@@ -9,8 +9,12 @@
 //! - [`checks`]: pure functions from observations to findings (no I/O)
 //! - [`output`]: human and JSON rendering, and the exit code
 //! - [`cli`]: argument parsing and the commands
+//! - [`doctor`]: what `doctor` looks at on this machine besides the network
 
 pub mod checks;
+pub mod cli;
+pub mod doctor;
 pub mod observe;
+pub mod output;
 pub mod probe;
 pub mod resolve;
