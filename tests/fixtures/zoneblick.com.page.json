@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0",
+  "url": "https://zoneblick.com/",
+  "host": "zoneblick.com",
+  "started_at_unix": 1794681945,
+  "vantage": {
+    "ipv4": true,
+    "ipv6": true
+  },
+  "browser": "Chrome/157.0.8103.51",
+  "loads": [
+    {
+      "mode": "dual",
+      "ended": "settled",
+      "requests": [
+        {
+          "url": "https://zoneblick.com/",
+          "host": "zoneblick.com",
+          "kind": "document",
+          "document": true,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;700;800&display=swap",
+          "host": "fonts.googleapis.com",
+          "kind": "stylesheet",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://plausible.io/js/pa-khXACeVMM7wPL7oCRx6X5.js",
+          "host": "plausible.io",
+          "kind": "script",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/ibmplexmono/v23/-F63fjptAgt5VM-kVkqdyU8n1i8q131nj-o.woff2",
+          "host": "fonts.gstatic.com",
+          "kind": "font",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/ibmplexmono/v23/-F6qfjptAgt5VM-kVkqdyU8n3twJwlBFgsAXHNk.woff2",
+          "host": "fonts.gstatic.com",
+          "kind": "font",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://zoneblick.com/favicon.svg",
+          "host": "zoneblick.com",
+          "kind": "other",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        }
+      ],
+      "connections": [
+        {
+          "host": "zoneblick.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2606:50c0:8000::153",
+          "family": "ipv6",
+          "ms": 12
+        },
+        {
+          "host": "zoneblick.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2606:50c0:8000::153",
+          "family": "ipv6",
+          "ms": 13
+        },
+        {
+          "host": "fonts.googleapis.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2607:f8b0:4023:140d::5f",
+          "family": "ipv6",
+          "ms": 38
+        },
+        {
+          "host": "clients2.google.com",
+          "port": 80,
+          "tunnel": false,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for clients2.google.com"
+        },
+        {
+          "host": "www.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.gstatic.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
+          "host": "accounts.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for accounts.google.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
+          "host": "plausible.io",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2400:52e0:1a00::1348:1",
+          "family": "ipv6",
+          "ms": 14
+        },
+        {
+          "host": "fonts.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2607:f8b0:4009:81e::2003",
+          "family": "ipv6",
+          "ms": 12
+        },
+        {
+          "host": "fonts.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2607:f8b0:4009:81e::2003",
+          "family": "ipv6",
+          "ms": 13
+        }
+      ]
+    },
+    {
+      "mode": "v6only",
+      "ended": "settled",
+      "requests": [
+        {
+          "url": "https://zoneblick.com/",
+          "host": "zoneblick.com",
+          "kind": "document",
+          "document": true,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;700;800&display=swap",
+          "host": "fonts.googleapis.com",
+          "kind": "stylesheet",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://plausible.io/js/pa-khXACeVMM7wPL7oCRx6X5.js",
+          "host": "plausible.io",
+          "kind": "script",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/ibmplexmono/v23/-F63fjptAgt5VM-kVkqdyU8n1i8q131nj-o.woff2",
+          "host": "fonts.gstatic.com",
+          "kind": "font",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://fonts.gstatic.com/s/ibmplexmono/v23/-F6qfjptAgt5VM-kVkqdyU8n3twJwlBFgsAXHNk.woff2",
+          "host": "fonts.gstatic.com",
+          "kind": "font",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://zoneblick.com/favicon.svg",
+          "host": "zoneblick.com",
+          "kind": "other",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        }
+      ],
+      "connections": [
+        {
+          "host": "zoneblick.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2606:50c0:8000::153",
+          "family": "ipv6",
+          "ms": 16
+        },
+        {
+          "host": "zoneblick.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2606:50c0:8000::153",
+          "family": "ipv6",
+          "ms": 15
+        },
+        {
+          "host": "plausible.io",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2400:52e0:1a00::1348:1",
+          "family": "ipv6",
+          "ms": 16
+        },
+        {
+          "host": "fonts.googleapis.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2607:f8b0:4023:140d::5f",
+          "family": "ipv6",
+          "ms": 36
+        },
+        {
+          "host": "fonts.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2607:f8b0:4009:81e::2003",
+          "family": "ipv6",
+          "ms": 15
+        },
+        {
+          "host": "fonts.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2607:f8b0:4009:81e::2003",
+          "family": "ipv6",
+          "ms": 16
+        },
+        {
+          "host": "clients2.google.com",
+          "port": 80,
+          "tunnel": false,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for clients2.google.com"
+        },
+        {
+          "host": "www.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.gstatic.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
+          "host": "accounts.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for accounts.google.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        }
+      ]
+    }
+  ],
+  "findings": [],
+  "summary": {
+    "critical": 0,
+    "warning": 0,
+    "notice": 0,
+    "info": 0
+  },
+  "exit_code": 0
+}

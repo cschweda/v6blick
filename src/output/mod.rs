@@ -6,7 +6,7 @@ pub mod json;
 use serde::Serialize;
 
 use crate::checks::{Finding, Severity};
-use crate::observe::Observation;
+use crate::observe::{Observation, PageObservation};
 
 /// Version of the JSON document. It changes only when a field is removed,
 /// renamed or changes meaning; new fields may be added without a bump.
@@ -72,6 +72,33 @@ pub struct Report {
 
 impl Report {
     pub fn new(observation: Observation, findings: Vec<Finding>) -> Self {
+        let summary = Summary::of(&findings);
+        Self {
+            schema_version: SCHEMA_VERSION,
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            observation,
+            findings,
+            summary,
+            exit_code: summary.exit_code(),
+        }
+    }
+}
+
+/// The result of a completed `page` run: the page loads, then what the
+/// page checks made of them.
+#[derive(Debug, Clone, Serialize)]
+pub struct PageReport {
+    pub schema_version: u32,
+    pub version: String,
+    #[serde(flatten)]
+    pub observation: PageObservation,
+    pub findings: Vec<Finding>,
+    pub summary: Summary,
+    pub exit_code: u8,
+}
+
+impl PageReport {
+    pub fn new(observation: PageObservation, findings: Vec<Finding>) -> Self {
         let summary = Summary::of(&findings);
         Self {
             schema_version: SCHEMA_VERSION,

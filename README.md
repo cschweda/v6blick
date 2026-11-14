@@ -1,3 +1,5 @@
+![The v6blick social card: "See your site without IPv4." Below it, a one-line description, three real results (a warning EQV-02 for www.metaincognita.com, a warning ADR-01 for metaincognita.com, and zoneblick.com clean), the labels IPv4 against IPv6, 10 checks today, JSON for CI, no account and one binary, and the finding itself: www.metaincognita.com answers 301 then 200 over IPv4, its redirect fails over IPv6, and metaincognita.com has no AAAA record](docs/og-image.png)
+
 # v6blick
 
 Does your site work for someone who has no IPv4?
@@ -11,8 +13,6 @@ v6blick connects to a site over IPv4 and over IPv6 separately, compares the two,
 - Decisions made while building: [DECISIONS.md](DECISIONS.md)
 - Companion project: [zoneblick](https://zoneblick.com), which watches DNS zones over time
 - Who it is for, with the command for each case: [Who it is for](#who-it-is-for)
-
-![The v6blick social card: "See your site without IPv4." Below it, a one-line description, three real results (a warning EQV-02 for www.metaincognita.com, a warning ADR-01 for metaincognita.com, and zoneblick.com clean), the labels IPv4 against IPv6, 10 checks today, JSON for CI, no account and one binary, and the finding itself: www.metaincognita.com answers 301 then 200 over IPv4, its redirect fails over IPv6, and metaincognita.com has no AAAA record](docs/og-image.png)
 
 ## Contents
 

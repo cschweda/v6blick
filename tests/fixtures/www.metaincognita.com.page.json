@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0",
+  "url": "https://www.metaincognita.com/",
+  "host": "www.metaincognita.com",
+  "started_at_unix": 1794681937,
+  "vantage": {
+    "ipv4": true,
+    "ipv6": true
+  },
+  "browser": "Chrome/157.0.8103.51",
+  "loads": [
+    {
+      "mode": "dual",
+      "ended": "settled",
+      "requests": [
+        {
+          "url": "https://www.metaincognita.com/",
+          "host": "www.metaincognita.com",
+          "kind": "document",
+          "document": true,
+          "result": "redirected",
+          "status": 301
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "host": "metaincognita.com",
+          "kind": "document",
+          "document": true,
+          "redirected_from": "https://www.metaincognita.com/",
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://metaincognita.com/_payload.json?f60c3a01-2d77-4a9f-abb8-d5e97b8cbaac",
+          "host": "metaincognita.com",
+          "kind": "other",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://metaincognita.com/_nuxt/P1IHwbER.js",
+          "host": "metaincognita.com",
+          "kind": "script",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://metaincognita.com/_nuxt/QD7i4sEE.js",
+          "host": "metaincognita.com",
+          "kind": "script",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://metaincognita.com/_fonts/h_KmxwHWAbZ0E7eWhUEfoCxrf9wSDGQad1CgON153wo-YnXXhbOFAu7b5GePoTizJJCCC2y_xrIxl-OtD4NBIcM.woff2",
+          "host": "metaincognita.com",
+          "kind": "font",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://metaincognita.com/_fonts/r-bswtbwoZnynEdTgS0FmiCgfDUFxs2Euzb4Zq3SDQY-vP_nIRIFgf8lQF3j_Wq9RW1rQjxNezjC0ISUs0rx8eM.woff2",
+          "host": "metaincognita.com",
+          "kind": "font",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://metaincognita.com/_nuxt/index.mhcVGMrO.css",
+          "host": "metaincognita.com",
+          "kind": "stylesheet",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://plausible.io/api/event",
+          "host": "plausible.io",
+          "kind": "fetch",
+          "document": false,
+          "result": "loaded",
+          "status": 202
+        },
+        {
+          "url": "https://metaincognita.com/favicon.svg",
+          "host": "metaincognita.com",
+          "kind": "other",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        },
+        {
+          "url": "https://metaincognita.com/_nuxt/builds/meta/f60c3a01-2d77-4a9f-abb8-d5e97b8cbaac.json",
+          "host": "metaincognita.com",
+          "kind": "fetch",
+          "document": false,
+          "result": "loaded",
+          "status": 200
+        }
+      ],
+      "connections": [
+        {
+          "host": "www.metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2600:1f18:16e:df01::258",
+          "family": "ipv6",
+          "ms": 33
+        },
+        {
+          "host": "www.metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2600:1f18:16e:df01::258",
+          "family": "ipv6",
+          "ms": 36
+        },
+        {
+          "host": "metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "75.2.60.5",
+          "family": "ipv4",
+          "ms": 14
+        },
+        {
+          "host": "clients2.google.com",
+          "port": 80,
+          "tunnel": false,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for clients2.google.com"
+        },
+        {
+          "host": "www.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.gstatic.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
+          "host": "accounts.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for accounts.google.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
+          "host": "plausible.io",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2400:52e0:1a00::1070:1",
+          "family": "ipv6",
+          "ms": 18
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
+          "host": "accounts.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for accounts.google.com"
+        }
+      ]
+    },
+    {
+      "mode": "v6only",
+      "ended": "settled",
+      "requests": [
+        {
+          "url": "https://www.metaincognita.com/",
+          "host": "www.metaincognita.com",
+          "kind": "document",
+          "document": true,
+          "result": "redirected",
+          "status": 301
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "host": "metaincognita.com",
+          "kind": "document",
+          "document": true,
+          "redirected_from": "https://www.metaincognita.com/",
+          "result": "failed",
+          "error": "net::ERR_TUNNEL_CONNECTION_FAILED"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "host": "metaincognita.com",
+          "kind": "document",
+          "document": true,
+          "result": "canceled"
+        }
+      ],
+      "connections": [
+        {
+          "host": "www.metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2600:1f18:16e:df01::258",
+          "family": "ipv6",
+          "ms": 34
+        },
+        {
+          "host": "www.metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "connected",
+          "address": "2600:1f18:16e:df01::258",
+          "family": "ipv6",
+          "ms": 37
+        },
+        {
+          "host": "metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "no_ipv6_address",
+          "message": "metaincognita.com has no IPv6 address"
+        },
+        {
+          "host": "metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "no_ipv6_address",
+          "message": "metaincognita.com has no IPv6 address"
+        },
+        {
+          "host": "metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "no_ipv6_address",
+          "message": "metaincognita.com has no IPv6 address"
+        },
+        {
+          "host": "metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "no_ipv6_address",
+          "message": "metaincognita.com has no IPv6 address"
+        },
+        {
+          "host": "metaincognita.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "no_ipv6_address",
+          "message": "metaincognita.com has no IPv6 address"
+        },
+        {
+          "host": "clients2.google.com",
+          "port": 80,
+          "tunnel": false,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for clients2.google.com"
+        },
+        {
+          "host": "www.gstatic.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.gstatic.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        },
+        {
+          "host": "accounts.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for accounts.google.com"
+        },
+        {
+          "host": "www.google.com",
+          "port": 443,
+          "tunnel": true,
+          "result": "refused",
+          "reason": "not_asked_by_page",
+          "message": "the page did not ask for www.google.com"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "check_id": "PGE-01",
+      "severity": "critical",
+      "name": "metaincognita.com",
+      "summary": "the page cannot be loaded on an IPv6-only network: https://www.metaincognita.com/ redirects to https://metaincognita.com/, and metaincognita.com has no IPv6 address",
+      "meaning": "A visitor on an IPv6-only network with no translator does not get the page at all. One whose network has a NAT64 translator, as many mobile networks do, still does, as long as the page is asked for by name.",
+      "fix": "Give the page's host an IPv6 address, and every host it redirects through as well. If the address is there and the page still fails, the server does not answer over IPv6: see what `v6blick check` says about the host.",
+      "evidence": {
+        "kind": "page_unloadable",
+        "mode": "v6only",
+        "url": "https://metaincognita.com/",
+        "error": "net::ERR_TUNNEL_CONNECTION_FAILED",
+        "redirected_from": "https://www.metaincognita.com/",
+        "reason": "metaincognita.com has no IPv6 address"
+      }
+    }
+  ],
+  "summary": {
+    "critical": 1,
+    "warning": 0,
+    "notice": 0,
+    "info": 0
+  },
+  "exit_code": 2
+}

@@ -12,6 +12,7 @@
 
 pub mod adr;
 pub mod eqv;
+pub mod pge;
 pub mod rch;
 
 #[cfg(test)]
@@ -21,7 +22,7 @@ use std::net::IpAddr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::observe::{Observation, SpecialUse};
+use crate::observe::{Mode, Observation, SpecialUse};
 
 /// Severity levels from `DESIGN.md`, most severe first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -112,6 +113,22 @@ pub fn advice(check_id: &str) -> Advice {
         "EQV-02" => (
             "Visitors on IPv6 get a different answer than visitors on IPv4: another page, an error, or a redirect that leads nowhere for them.",
             "Make the IPv6 side serve the same configuration as the IPv4 side. Where a redirect leads to a host with no IPv6 address, give that host an AAAA record, or redirect to a name that has one.",
+        ),
+        "PGE-01" => (
+            "A visitor on an IPv6-only network with no translator does not get the page at all. One whose network has a NAT64 translator, as many mobile networks do, still does, as long as the page is asked for by name.",
+            "Give the page's host an IPv6 address, and every host it redirects through as well. If the address is there and the page still fails, the server does not answer over IPv6: see what `v6blick check` says about the host.",
+        ),
+        "PGE-02" => (
+            "The page loads, and this part of it does not: a stylesheet, a script, a font or an image is missing for a visitor on an IPv6-only network with no translator. For a first-party host that is yours to fix; for a third party it is theirs.",
+            "For your own host, publish an AAAA record. For a third party, ask them for IPv6, serve the file from your own site, or use a supplier that has it.",
+        ),
+        "PGE-03" => (
+            "The host has an IPv6 address and what the page needs from it still does not arrive over IPv6. Visitors without IPv4 miss it; the others get it only because their browser falls back.",
+            "Run `v6blick check` on the host: it says whether nothing answers at the IPv6 address, the handshake fails, or the answer differs.",
+        ),
+        "PGE-04" => (
+            "A resource is redirected to a host that cannot be reached without IPv4, so it is missing for a visitor on an IPv6-only network with no translator.",
+            "Give the host the redirect leads to an IPv6 address, or link to a place that has one.",
         ),
         "EQV-03" => (
             "Visitors on IPv6 may be shown a different page. A page whose content changes on every load can cause this by chance.",
@@ -259,6 +276,34 @@ pub enum Evidence {
         ipv4: Vec<ServedBody>,
         ipv6: Vec<ServedBody>,
     },
+    /// The page itself did not load in a mode in which it should.
+    PageUnloadable {
+        mode: Mode,
+        /// The address that failed: the page, or where it redirected to.
+        url: String,
+        /// The browser's word for the failure.
+        error: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        redirected_from: Option<String>,
+        /// What the proxy said about the host.
+        reason: String,
+    },
+    /// Requests to one host failed in a mode and worked in `dual`.
+    HostFails {
+        mode: Mode,
+        host: String,
+        /// The registrable domain the host belongs to.
+        site: String,
+        third_party: bool,
+        /// How many requests failed.
+        requests: usize,
+        /// What they were for: `script`, `image` and so on.
+        kinds: Vec<String>,
+        /// The first few addresses.
+        urls: Vec<String>,
+        /// What the proxy said about the host.
+        reason: String,
+    },
 }
 
 /// One result of one check.
@@ -287,10 +332,21 @@ impl Finding {
         summary: String,
         evidence: Evidence,
     ) -> Finding {
+        Finding::about(check_id, severity, &obs.host, summary, evidence)
+    }
+
+    /// A finding about a host that is named outright.
+    pub(crate) fn about(
+        check_id: &str,
+        severity: Severity,
+        host: &str,
+        summary: String,
+        evidence: Evidence,
+    ) -> Finding {
         Finding {
             check_id: check_id.to_string(),
             severity,
-            name: obs.host.clone(),
+            name: host.to_string(),
             summary,
             meaning: advice(check_id).meaning.to_string(),
             fix: advice(check_id).fix.to_string(),
@@ -318,7 +374,7 @@ mod tests {
     fn every_check_says_what_it_means_and_how_to_fix_it() {
         for id in [
             "ADR-01", "ADR-02", "ADR-03", "RCH-01", "RCH-02", "RCH-03", "RCH-04", "EQV-01",
-            "EQV-02", "EQV-03",
+            "EQV-02", "EQV-03", "PGE-01", "PGE-02", "PGE-03", "PGE-04",
         ] {
             let advice = advice(id);
             assert!(advice.meaning.ends_with('.'), "{id}");

@@ -45,7 +45,9 @@ fn a_bad_command_line_is_a_failed_run_not_a_critical_finding() {
     for args in [
         &[][..],
         &["check"],
-        &["page", "https://example.org"],
+        &["page"],
+        &["page", "https://example.org", "--mode", "nat64"],
+        &["monitor", "https://example.org"],
         &["check", "a", "b"],
     ] {
         let out = v6blick(args);
@@ -64,6 +66,11 @@ fn an_address_in_place_of_a_host_is_refused_before_any_network_use() {
         err.starts_with("v6blick: '192.0.2.1' is an address, not a host name"),
         "{err}"
     );
+
+    // The page command refuses the same way, before it starts a browser.
+    let out = v6blick(&["page", "192.0.2.1"]);
+    assert_eq!(out.status.code(), Some(3));
+    assert!(text(&out.stderr).contains("is an address, not a host name"));
 
     let out = v6blick(&["check", "ftp://example.org/", "--json"]);
     assert_eq!(out.status.code(), Some(3));

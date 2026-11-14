@@ -13,6 +13,7 @@
 //! it applies the same address rule as the prober: a page cannot steer
 //! it at a host inside the network it runs in.
 
+use std::collections::HashSet;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -32,6 +33,43 @@ const MAX_HEAD: usize = 64 * 1024;
 /// At most this many addresses of a host are tried.
 const MAX_ADDRESSES: usize = 4;
 
+/// The hosts a page has asked for so far. The browser driver adds each
+/// host as the page requests it; the proxy carries connections to those
+/// hosts only, so that the browser's own traffic stays home.
+#[derive(Debug, Default)]
+pub struct Announced {
+    hosts: Mutex<HashSet<String>>,
+    news: tokio::sync::Notify,
+}
+
+impl Announced {
+    pub fn add(&self, host: &str) {
+        if self.hosts.lock().expect("lock").insert(host.to_string()) {
+            self.news.notify_waiters();
+        }
+    }
+
+    fn has(&self, host: &str) -> bool {
+        self.hosts.lock().expect("lock").contains(host)
+    }
+
+    /// Wait for `host` to be announced. The browser says what a page
+    /// asks for a moment before it connects, and the driver hears it a
+    /// moment later, so a connection may come first.
+    async fn wait_for(&self, host: &str, patience: Duration) -> bool {
+        let waiting = async {
+            loop {
+                let news = self.news.notified();
+                if self.has(host) {
+                    return;
+                }
+                news.await;
+            }
+        };
+        tokio::time::timeout(patience, waiting).await.is_ok() || self.has(host)
+    }
+}
+
 /// How the proxy behaves.
 #[derive(Debug, Clone)]
 pub struct ProxyConfig {
@@ -46,6 +84,10 @@ pub struct ProxyConfig {
     pub head_timeout: Duration,
     /// Connections carried at once. More than this wait.
     pub max_connections: usize,
+    /// When set, only hosts announced here are connected to.
+    pub only: Option<Arc<Announced>>,
+    /// How long a connection waits for its host to be announced.
+    pub announce_wait: Duration,
 }
 
 impl ProxyConfig {
@@ -57,6 +99,8 @@ impl ProxyConfig {
             fallback_after: Duration::from_secs(2),
             head_timeout: Duration::from_secs(10),
             max_connections: 64,
+            only: None,
+            announce_wait: Duration::from_millis(1500),
         }
     }
 }
@@ -225,6 +269,15 @@ async fn route(host: &str, port: u16, shared: &Shared) -> (ProxyOutcome, Option<
     let only_v6 = config.mode == Mode::V6only;
     let refused = |reason, message: String| (ProxyOutcome::Refused { reason, message }, None);
 
+    if let Some(announced) = &config.only
+        && !announced.wait_for(host, config.announce_wait).await
+    {
+        return refused(
+            RefusalReason::NotAskedByPage,
+            format!("the page did not ask for {host}"),
+        );
+    }
+
     // A destination written as an address is never looked up.
     let candidates: Vec<IpAddr> = match host.parse::<IpAddr>() {
         Ok(literal) => {
@@ -366,7 +419,14 @@ async fn serve(mut browser: TcpStream, shared: &Shared) {
             outcome,
         });
     let Some(mut server) = server else {
-        return reply(&mut browser, "502 Bad Gateway", &said).await;
+        // A tunnel that cannot be opened is answered with an error, which
+        // the browser reports as a failed connection. A plain request is
+        // dropped without a word: an answer from the proxy would look to
+        // the browser like the site's own page.
+        if asked.tunnel {
+            reply(&mut browser, "502 Bad Gateway", &said).await;
+        }
+        return;
     };
 
     if asked.tunnel {

@@ -50,6 +50,118 @@ impl Style {
     }
 }
 
+/// Render a `page` report for a terminal.
+pub fn render_page(report: &super::PageReport, color: bool) -> String {
+    let st = Style { color };
+    let obs = &report.observation;
+    let mut out = String::new();
+    let w = &mut out;
+
+    let _ = writeln!(w, "{}", st.bold(&format!("v6blick page {}", obs.url)));
+    let browser = obs.browser.as_deref().unwrap_or("a browser");
+    let _ = writeln!(
+        w,
+        "{}",
+        st.dim(&format!(
+            "{}   IPv6 on this machine: working   {browser}",
+            utc(obs.started_at_unix)
+        ))
+    );
+    let _ = writeln!(w);
+
+    let _ = writeln!(w, "{}", st.bold("Page loads"));
+    for load in &obs.loads {
+        // What the browser cancelled itself is not a request of the page.
+        let total = load
+            .requests
+            .iter()
+            .filter(|r| r.outcome != crate::observe::RequestOutcome::Canceled)
+            .count();
+        let ok = load.requests.iter().filter(|r| r.answered()).count();
+        let failed = load
+            .requests
+            .iter()
+            .filter(|r| r.failed().is_some())
+            .count();
+        let mut line = format!(
+            "  {:<7} {total:>4} requests  {ok:>4} ok",
+            load.mode.as_str()
+        );
+        if failed > 0 {
+            line.push_str(&st.bad(&format!("  {failed:>4} failed")));
+        }
+        if load.ended != "settled" {
+            line.push_str(&st.dim("   (ended at the time limit)"));
+        }
+        let _ = writeln!(w, "{line}");
+    }
+    let _ = writeln!(
+        w,
+        "  {}",
+        st.dim("first view only: what the page loads on a click or a scroll is not seen")
+    );
+    let _ = writeln!(w);
+
+    // The hosts of the last load, the page's own site first.
+    if let Some(load) = obs.loads.last() {
+        use crate::checks::pge::is_third_party;
+        let mut hosts: std::collections::BTreeMap<(bool, &str), (usize, usize)> =
+            std::collections::BTreeMap::new();
+        for r in &load.requests {
+            let entry = hosts
+                .entry((is_third_party(&obs.host, &r.host), r.host.as_str()))
+                .or_default();
+            if r.failed().is_some() {
+                entry.1 += 1;
+            } else if r.answered() {
+                entry.0 += 1;
+            }
+        }
+        if !hosts.is_empty() {
+            let _ = writeln!(
+                w,
+                "{}",
+                st.bold(&format!("Hosts in {}", load.mode.as_str()))
+            );
+            let width = hosts.keys().map(|(_, h)| h.len()).max().unwrap_or(0);
+            for ((third, host), (ok, failed)) in hosts {
+                let whose = if third { "third party" } else { "own site" };
+                let line = format!("  {host:<width$}  {whose:<11}  {ok:>3} ok");
+                if failed > 0 {
+                    let why = match load.connection(host).map(|c| &c.outcome) {
+                        Some(crate::observe::ProxyOutcome::Refused { message, .. })
+                        | Some(crate::observe::ProxyOutcome::Failed { message, .. }) => {
+                            message.clone()
+                        }
+                        _ => "the request failed".to_string(),
+                    };
+                    let _ = writeln!(
+                        w,
+                        "{line}  {}",
+                        st.bad(&format!("{failed:>3} failed   {why}"))
+                    );
+                } else {
+                    let _ = writeln!(w, "{line}");
+                }
+            }
+            let _ = writeln!(w);
+        }
+    }
+
+    findings_of(w, &st, &report.findings);
+    let s = report.summary;
+    let _ = writeln!(
+        w,
+        "{} {} critical, {} warning, {} notice, {} info",
+        st.bold("Summary:"),
+        s.critical,
+        s.warning,
+        s.notice,
+        s.info
+    );
+    out
+}
+
 /// Render a `check` report for a terminal. `color` turns ANSI colours on.
 pub fn render(report: &Report, color: bool) -> String {
     let st = Style { color };
@@ -281,18 +393,18 @@ fn advice(w: &mut String, st: &Style, label: &str, text: &str) {
 }
 
 fn findings(w: &mut String, st: &Style, report: &Report) {
+    findings_of(w, st, &report.findings);
+}
+
+fn findings_of(w: &mut String, st: &Style, all: &[Finding]) {
     let _ = writeln!(w, "{}", st.bold("Findings"));
-    if report.findings.is_empty() {
+    if all.is_empty() {
         let _ = writeln!(w, "  None. All checks passed.");
         let _ = writeln!(w);
         return;
     }
     for severity in Severity::ALL {
-        let group: Vec<&Finding> = report
-            .findings
-            .iter()
-            .filter(|f| f.severity == severity)
-            .collect();
+        let group: Vec<&Finding> = all.iter().filter(|f| f.severity == severity).collect();
         if group.is_empty() {
             continue;
         }
@@ -438,5 +550,40 @@ pub fn evidence_lines(evidence: &Evidence) -> Vec<String> {
             .map(|b| body_line("IPv4", b))
             .chain(ipv6.iter().map(|b| body_line("IPv6", b)))
             .collect(),
+        Evidence::PageUnloadable {
+            url,
+            error,
+            redirected_from,
+            reason,
+            ..
+        } => {
+            let mut lines = Vec::new();
+            if let Some(from) = redirected_from {
+                lines.push(format!("redirected from {from}"));
+            }
+            lines.push(format!("{url}: {error}"));
+            lines.push(reason.clone());
+            lines
+        }
+        Evidence::HostFails {
+            kinds,
+            urls,
+            requests,
+            reason,
+            site,
+            host,
+            ..
+        } => {
+            let mut lines = vec![reason.clone()];
+            if site != host {
+                lines.push(format!("site: {site}"));
+            }
+            lines.push(format!("what failed: {}", list(kinds)));
+            lines.extend(urls.iter().cloned());
+            if *requests > urls.len() {
+                lines.push(format!("and {} more", requests - urls.len()));
+            }
+            lines
+        }
     }
 }

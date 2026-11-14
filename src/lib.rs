@@ -11,11 +11,13 @@
 //! - [`cli`]: argument parsing and the commands
 //! - [`doctor`]: what `doctor` looks at on this machine besides the network
 
+pub mod browser;
 pub mod checks;
 pub mod cli;
 pub mod doctor;
 pub mod observe;
 pub mod output;
+pub mod page;
 pub mod probe;
 pub mod proxy;
 pub mod resolve;

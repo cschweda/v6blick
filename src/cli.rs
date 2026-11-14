@@ -35,9 +35,36 @@ pub enum Command {
     /// Look a host up, connect to it over IPv4 and over IPv6 separately,
     /// and compare the two
     Check(CheckArgs),
+    /// Load a page in an installed Chrome or Chromium, once on an
+    /// ordinary connection and once without IPv4, and say what breaks
+    Page(PageArgs),
     /// Say whether this machine has working IPv6 and whether Chrome or
     /// Chromium is installed
     Doctor,
+}
+
+/// The network a page is tested in, after the `dual` baseline.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum ModeArg {
+    /// An IPv6-only network with no translator
+    V6only,
+}
+
+#[derive(Debug, Args)]
+pub struct PageArgs {
+    /// The page: an http or https address, or a host name for https
+    #[arg(value_name = "URL")]
+    pub url: String,
+    /// The network to test the page in
+    #[arg(long, value_enum, default_value = "v6only")]
+    pub mode: ModeArg,
+    /// Print one JSON document instead of text
+    #[arg(long)]
+    pub json: bool,
+    /// Let private, loopback and link-local addresses be contacted, for
+    /// testing a build on your own machine or network
+    #[arg(long)]
+    pub allow_private: bool,
 }
 
 #[derive(Debug, Args)]
@@ -88,6 +115,16 @@ pub enum RunError {
     #[error("TLS could not be set up: {0}")]
     Tls(#[from] rustls::Error),
     #[error(
+        "no Chrome or Chromium was found, in the usual places or on the search path. The page test needs one; `v6blick check` does not"
+    )]
+    NoBrowser,
+    #[error("the browser could not be used: {0}")]
+    Browser(String),
+    #[error(
+        "{url} does not load on an ordinary connection ({why}), so there is nothing to compare"
+    )]
+    PageUnreachable { url: String, why: String },
+    #[error(
         "nothing accepts a connection at {host}, over IPv4 or over IPv6, so there is nothing to compare. The site may be down, or this machine may be unable to reach it"
     )]
     Unreachable { host: String },
@@ -115,6 +152,9 @@ impl RunError {
             RunError::Tls(_) => "tls_setup",
             RunError::Deadline { .. } => "deadline",
             RunError::Unreachable { .. } => "unreachable",
+            RunError::NoBrowser => "no_browser",
+            RunError::Browser(_) => "browser",
+            RunError::PageUnreachable { .. } => "page_unreachable",
             RunError::NotContacted { .. } => "not_contacted",
         }
     }
@@ -334,6 +374,60 @@ pub async fn check(args: &CheckArgs, color: bool) -> CommandOutput {
     };
     let outcome = observe(&args.target, client, config).await;
     report(&args.target, outcome, args.json, color)
+}
+
+/// Turn the outcome of a page run into what `page` prints.
+pub fn report_page(
+    target: &str,
+    outcome: Result<crate::observe::PageObservation, RunError>,
+    as_json: bool,
+    color: bool,
+) -> CommandOutput {
+    match outcome {
+        Ok(observation) => {
+            let findings = checks::pge::check(&observation);
+            let report = crate::output::PageReport::new(observation, findings);
+            CommandOutput {
+                stdout: if as_json {
+                    json::render(&report)
+                } else {
+                    human::render_page(&report, color)
+                },
+                stderr: String::new(),
+                exit_code: report.exit_code,
+            }
+        }
+        Err(e) => report(target, Err(e), as_json, color),
+    }
+}
+
+/// `v6blick page`.
+pub async fn page(args: &PageArgs, color: bool) -> CommandOutput {
+    // What is wrong with the address is said before a browser is looked for.
+    if let Err(why) = crate::page::page_url(&args.url) {
+        let bad = Err(RunError::InvalidTarget(why));
+        return report_page(&args.url, bad, args.json, color);
+    }
+    let candidates = doctor::chrome_candidates(|name| std::env::var_os(name));
+    let Some(chrome) = doctor::find_chrome(&candidates).cloned() else {
+        return report_page(&args.url, Err(RunError::NoBrowser), args.json, color);
+    };
+    // A page names many hosts, so it may ask more of the DNS than a
+    // check of one host.
+    let client = Arc::new(Client::live(NetConfig {
+        allow_private: args.allow_private,
+        max_queries: 5000,
+        ..NetConfig::default()
+    }));
+    let mode = match args.mode {
+        ModeArg::V6only => crate::observe::Mode::V6only,
+    };
+    let settings = crate::page::PageSettings {
+        allow_private: args.allow_private,
+        ..crate::page::PageSettings::new(chrome, mode)
+    };
+    let outcome = crate::page::observe_page(&args.url, client, settings).await;
+    report_page(&args.url, outcome, args.json, color)
 }
 
 /// `v6blick doctor`.

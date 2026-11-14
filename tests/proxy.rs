@@ -98,7 +98,10 @@ async fn v6only_does_not_fall_back() {
     let port = serve(|_| (Some(Site::page(None, 200, PAGE)), None)).await;
     let proxy = proxy(Mode::V6only, true).await;
     let response = get(&proxy, "both.v6blick.test", port).await;
-    assert!(response.starts_with("HTTP/1.1 502"), "{response}");
+    assert!(
+        response.is_empty(),
+        "a plain request is dropped: {response}"
+    );
     match only(proxy.finish()).outcome {
         ProxyOutcome::Failed {
             stage, addresses, ..
@@ -116,18 +119,27 @@ async fn v6only_refuses_a_host_without_an_ipv6_address() {
     let port = serve(|_| (Some(site.clone()), Some(site))).await;
     let proxy = proxy(Mode::V6only, true).await;
     let response = get(&proxy, "old.v6blick.test", port).await;
-    assert!(response.starts_with("HTTP/1.1 502"), "{response}");
     assert!(
-        response.contains("X-V6blick: old.v6blick.test has no IPv6 address"),
-        "{response}"
+        response.is_empty(),
+        "a plain request is dropped: {response}"
     );
-    assert!(matches!(
-        only(proxy.finish()).outcome,
-        ProxyOutcome::Refused {
-            reason: RefusalReason::NoIpv6Address,
-            ..
-        }
-    ));
+    // A tunnel is refused with an answer that says why.
+    let connect = format!("CONNECT old.v6blick.test:{port} HTTP/1.1\r\n\r\n");
+    let refused = exchange(proxy.address(), &connect).await;
+    assert!(refused.starts_with("HTTP/1.1 502"), "{refused}");
+    assert!(
+        refused.contains("X-V6blick: old.v6blick.test has no IPv6 address"),
+        "{refused}"
+    );
+    for record in proxy.finish() {
+        assert!(matches!(
+            record.outcome,
+            ProxyOutcome::Refused {
+                reason: RefusalReason::NoIpv6Address,
+                ..
+            }
+        ));
+    }
 
     // In dual the same host is served over IPv4.
     let dual = self::proxy(Mode::Dual, true).await;
@@ -140,7 +152,10 @@ async fn v6only_refuses_a_literal_ipv4_address_and_allows_a_literal_ipv6_one() {
     let port = serve(|_| (Some(site.clone()), Some(site))).await;
     let proxy = proxy(Mode::V6only, true).await;
     let response = get(&proxy, "127.0.0.1", port).await;
-    assert!(response.starts_with("HTTP/1.1 502"), "{response}");
+    assert!(
+        response.is_empty(),
+        "a plain request is dropped: {response}"
+    );
     let response = get(&proxy, "[::1]", port).await;
     assert!(response.ends_with(PAGE), "{response}");
     let records = proxy.finish();
@@ -162,7 +177,7 @@ async fn private_destinations_need_the_flag() {
     let proxy = proxy(Mode::Dual, false).await;
     for host in ["both.v6blick.test", "127.0.0.1", "[::1]"] {
         let response = get(&proxy, host, port).await;
-        assert!(response.starts_with("HTTP/1.1 502"), "{host}: {response}");
+        assert!(response.is_empty(), "{host}: {response}");
     }
     for record in proxy.finish() {
         match record.outcome {
@@ -179,7 +194,10 @@ async fn private_destinations_need_the_flag() {
 async fn a_name_that_does_not_resolve_is_a_failed_lookup() {
     let proxy = proxy(Mode::Dual, true).await;
     let response = get(&proxy, "nowhere.v6blick.test", 80).await;
-    assert!(response.starts_with("HTTP/1.1 502"), "{response}");
+    assert!(
+        response.is_empty(),
+        "a plain request is dropped: {response}"
+    );
     match only(proxy.finish()).outcome {
         ProxyOutcome::Failed {
             stage, addresses, ..
@@ -221,6 +239,48 @@ async fn a_tunnel_carries_whatever_is_sent_through_it() {
             ..
         }
     ));
+}
+
+#[tokio::test]
+async fn only_what_the_page_asked_for_is_carried() {
+    use v6blick::proxy::Announced;
+    let site = Site::page(None, 200, PAGE);
+    let port = serve(|_| (Some(site.clone()), Some(site))).await;
+    let announced = Arc::new(Announced::default());
+    let config = ProxyConfig {
+        allow_private: true,
+        only: Some(announced.clone()),
+        announce_wait: Duration::from_millis(300),
+        ..ProxyConfig::new(Mode::Dual)
+    };
+    let proxy = Proxy::start(config, Arc::new(hosts())).await.unwrap();
+
+    // Nobody announced the host: the browser wants it for itself.
+    let response = get(&proxy, "both.v6blick.test", port).await;
+    assert!(
+        response.is_empty(),
+        "a plain request is dropped: {response}"
+    );
+
+    // Announced a moment after the connection arrives: it waits for it.
+    let later = announced.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        later.add("old.v6blick.test");
+    });
+    assert!(get(&proxy, "old.v6blick.test", port).await.ends_with(PAGE));
+    // Announced already: no wait.
+    assert!(get(&proxy, "old.v6blick.test", port).await.ends_with(PAGE));
+
+    let records = proxy.finish();
+    assert!(matches!(
+        records[0].outcome,
+        ProxyOutcome::Refused {
+            reason: RefusalReason::NotAskedByPage,
+            ..
+        }
+    ));
+    assert!(matches!(records[1].outcome, ProxyOutcome::Connected { .. }));
 }
 
 #[tokio::test]

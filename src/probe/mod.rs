@@ -182,7 +182,7 @@ struct Attempt {
 const MAX_SHOWN: usize = 1024;
 
 /// Text from the network, safe to print and of bounded length.
-fn shown(text: &str) -> String {
+pub(crate) fn shown(text: &str) -> String {
     let safe = printable(text);
     if safe.chars().count() <= MAX_SHOWN {
         return safe;

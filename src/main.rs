@@ -37,6 +37,7 @@ fn run(cli: Cli) -> anyhow::Result<u8> {
     let color = std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
     let output = match cli.command {
         Command::Check(args) => runtime.block_on(cli::check(&args, color)),
+        Command::Page(args) => runtime.block_on(cli::page(&args, color)),
         Command::Doctor => runtime.block_on(cli::doctor(color)),
     };
     std::io::stdout()

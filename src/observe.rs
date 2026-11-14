@@ -443,6 +443,10 @@ pub enum RefusalReason {
     LiteralIpv4,
     /// Every address of the host is one v6blick does not contact.
     NotPublic,
+    /// The page did not ask for this host: the browser wanted it for
+    /// itself (an update check, a sign-in service). v6blick carries the
+    /// page's traffic and nothing else.
+    NotAskedByPage,
 }
 
 /// What the proxy did with one connection the browser asked for.
@@ -478,6 +482,128 @@ pub struct ProxiedConnection {
     pub tunnel: bool,
     #[serde(flatten)]
     pub outcome: ProxyOutcome,
+}
+
+/// How one request of a page ended.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "result", rename_all = "snake_case")]
+pub enum RequestOutcome {
+    /// A response arrived, whatever its status.
+    Loaded { status: u16 },
+    /// The response sent the browser elsewhere; the next request says
+    /// where that led.
+    Redirected { status: u16 },
+    /// No response. `error` is the browser's own word for it, for
+    /// example `net::ERR_TUNNEL_CONNECTION_FAILED`.
+    Failed { error: String },
+    /// The browser gave the request up itself, for example because the
+    /// page moved on.
+    Canceled,
+    /// Still under way when the page load was ended.
+    Unfinished,
+}
+
+/// One request the page made, as the browser reported it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PageRequest {
+    pub url: String,
+    /// The host of `url`. Lowercase, no trailing dot.
+    pub host: String,
+    /// What the browser wanted it for: `document`, `script`, `image`,
+    /// `stylesheet`, `font`, `xhr`, `fetch` and so on.
+    pub kind: String,
+    /// True for the page itself and for the redirects on the way to it.
+    pub document: bool,
+    /// The address that redirected here.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub redirected_from: Option<String>,
+    #[serde(flatten)]
+    pub outcome: RequestOutcome,
+}
+
+impl PageRequest {
+    /// True when a response arrived, also through a redirect.
+    pub fn answered(&self) -> bool {
+        matches!(
+            self.outcome,
+            RequestOutcome::Loaded { .. } | RequestOutcome::Redirected { .. }
+        )
+    }
+
+    pub fn failed(&self) -> Option<&str> {
+        match &self.outcome {
+            RequestOutcome::Failed { error } => Some(error),
+            _ => None,
+        }
+    }
+}
+
+/// One load of the page in one kind of network.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PageLoad {
+    pub mode: Mode,
+    /// `settled` when the page finished loading and went quiet,
+    /// `timeout` when it was ended at the time limit.
+    pub ended: String,
+    /// Every request the page made, in the order it was made.
+    pub requests: Vec<PageRequest>,
+    /// Every connection the browser asked the proxy for, with what the
+    /// proxy decided. This is where the reason for a failure is.
+    pub connections: Vec<ProxiedConnection>,
+}
+
+impl PageLoad {
+    /// The request for the page itself: the last one on the way to the
+    /// document, after its redirects.
+    pub fn document(&self) -> Option<&PageRequest> {
+        // After a failed navigation the browser asks for the page once
+        // more for its error page, and cancels that itself.
+        self.requests
+            .iter()
+            .rfind(|r| r.document && r.outcome != RequestOutcome::Canceled)
+    }
+
+    /// What the proxy did for a host. When the browser asked more than
+    /// once, a connection that opened counts.
+    pub fn connection(&self, host: &str) -> Option<&ProxiedConnection> {
+        let of_host = || self.connections.iter().filter(|c| c.host == host);
+        let held_back = |c: &&ProxiedConnection| {
+            matches!(
+                c.outcome,
+                ProxyOutcome::Refused {
+                    reason: RefusalReason::NotAskedByPage,
+                    ..
+                }
+            )
+        };
+        of_host()
+            .find(|c| matches!(c.outcome, ProxyOutcome::Connected { .. }))
+            // Then what the network did, before what v6blick held back.
+            .or_else(|| of_host().find(|c| !held_back(c)))
+            .or_else(|| of_host().next())
+    }
+}
+
+/// Everything one `page` run recorded. The page checks read only this.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PageObservation {
+    /// The page that was loaded.
+    pub url: String,
+    /// Its host. Lowercase, no trailing dot.
+    pub host: String,
+    pub started_at_unix: u64,
+    pub vantage: Vantage,
+    /// The browser that loaded it, as it names itself.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub browser: Option<String>,
+    /// One load per mode, `dual` first: the baseline.
+    pub loads: Vec<PageLoad>,
+}
+
+impl PageObservation {
+    pub fn load(&self, mode: Mode) -> Option<&PageLoad> {
+        self.loads.iter().find(|l| l.mode == mode)
+    }
 }
 
 /// Why an address is not an ordinary public one.
