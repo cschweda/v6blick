@@ -1,6 +1,6 @@
 # v6blick
 
-> v6blick is a command-line tool, written in Rust, that tests whether a website works for someone who has no IPv4. Phase 0 works: `check` and `doctor`, ten checks, text and JSON output. There is no release yet; build it with `cargo install --git https://github.com/cschweda/v6blick`.
+> v6blick is a command-line tool, written in Rust, that tests whether a website works for someone who has no IPv4. Phase 0 works: `check` and `doctor`, ten checks, text and JSON output. There are no ready-built binaries yet; build it with `cargo install --git https://github.com/cschweda/v6blick` (tag `v0.1.0`, Rust 1.88 or later). It needs working IPv6 on the machine it runs on; GitHub's hosted runners have none by default.
 
 Today v6blick connects to a host over IPv4 and over IPv6 separately and compares the two. Planned: load a whole page from three kinds of network, `dual` (an ordinary connection), `nat64` (IPv6-only with a NAT64 translator, simulated) and `v6only` (IPv6-only with no translator), and report what breaks in each. Findings have stable check IDs, four severities (critical, warning, notice, info), a plain statement with every finding of what it means and how to fix it, JSON output and exit codes for CI (0 clean, 1 notices or warnings, 2 critical, 3 the run failed).
 

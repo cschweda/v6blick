@@ -16,25 +16,117 @@ v6blick connects to a site over IPv4 and over IPv6 separately, compares the two,
 
 ## Contents
 
-- [Why this is needed](#why-this-is-needed)
 - [What it looks like](#what-it-looks-like)
-- [What a finding tells you](#what-a-finding-tells-you)
-- [Try it](#try-it)
 - [Who it is for](#who-it-is-for)
-- [The three networks](#the-three-networks)
-- [Commands](#commands)
-- [Checks](#checks)
-- [Exit codes](#exit-codes)
+- [Why this is needed](#why-this-is-needed)
+- [Platforms](#platforms)
+- [Install](#install)
+- [Try it](#try-it)
+- [What a finding tells you](#what-a-finding-tells-you)
+- [Command reference](#command-reference)
 - [JSON output](#json-output)
+- [The three networks](#the-three-networks)
 - [How it works](#how-it-works)
 - [Safety and politeness](#safety-and-politeness)
-- [Security audits](#security-audits)
 - [How it divides the work with zoneblick](#how-it-divides-the-work-with-zoneblick)
 - [Build phases](#build-phases)
 - [Development](#development)
 - [Repository layout](#repository-layout)
+- [Security audits](#security-audits)
 - [Responsible use](#responsible-use)
+- [Privacy](#privacy)
 - [License](#license)
+
+## What it looks like
+
+Real output, for the author's own sites, on 14 November 2026.
+
+`www.metaincognita.com` has IPv6 addresses and answers over them. It redirects to `metaincognita.com`, which has no AAAA record, so over IPv6 the visit ends at the redirect. A browser on a dual-stack connection never shows this, because it follows the redirect over IPv4:
+
+![Terminal output of v6blick check www.metaincognita.com: the host is an alias with two IPv4 and two IPv6 addresses, and both names resolve over IPv6 alone. Over IPv4 the redirect to https://metaincognita.com/ ends at a page with status 200. Over IPv6 it fails, because metaincognita.com has no IPv6 address. One warning, EQV-02, followed by what it means and how to fix it](screenshots/check-redirect.png)
+
+The bare domain itself, which has two A records and no AAAA record:
+
+![Terminal output of v6blick check metaincognita.com: two A records, no AAAA record, both IPv4 addresses answering on ports 443 and 80. One warning, ADR-01, the host has an IPv4 address and no IPv6 address, followed by what it means and how to fix it](screenshots/check-no-aaaa.png)
+
+A clean site. `zoneblick.com` has four addresses in each family, and all eight serve the same certificate, the same redirect and the same page:
+
+![Terminal output of v6blick check zoneblick.com: four IPv4 and four IPv6 addresses, all connecting in under 40 ms on ports 443 and 80 with the same certificate, and no findings](screenshots/check-clean.png)
+
+The page test is not built. This is the output the design aims at for it, a sketch and not real output:
+
+```
+v6blick page https://metaincognita.com   IPv6 on this machine: working
+
+  dual     42 requests   42 ok
+  nat64    42 requests   41 ok    1 refused
+  v6only   42 requests   33 ok    9 failed
+
+  warning  PGE-02  static.example.org      3 requests     no AAAA record
+  notice   PGE-02  fonts.thirdparty.example 4 requests    no AAAA record (third party)
+```
+
+## Who it is for
+
+Nine situations v6blick is designed for, each with the command that answers it. Those that use `check` and `doctor` work today. The three that use `page` (5, 6 and 7) are planned, for Phases 1 to 3.
+
+**1. "We published an AAAA record last year. Does it still work?"** A dual-stack browser would hide a dead IPv6 address by falling back. `check` connects over each family on its own, so an address that no longer answers is a critical finding (RCH-01).
+
+```
+v6blick check metaincognita.com
+```
+
+**2. "Our IPv6 traffic goes through a different load balancer. Does it serve the same site?"** `check` compares the certificate, the status, the redirect and the body between the two families (EQV-01 to EQV-03). A stale certificate or an old redirect on the IPv6 side shows up here.
+
+```
+v6blick check https://www.metaincognita.com/
+```
+
+**3. "The site redirects. Does the redirect work without IPv4?"** Redirects are followed inside one address family, so a redirect to a name with no IPv6 address ends there, as it does for a visitor. This is the real finding for `www.metaincognita.com`, which has IPv6 addresses and redirects to a bare domain that has none (EQV-02).
+
+```
+v6blick check www.metaincognita.com
+```
+
+**4. "A pull request must not add something that breaks for IPv6-only visitors."** Run it in CI against the preview build. It exits `2` on a critical finding and `1` on warnings. The runner needs IPv6; GitHub's hosted runners have none by default (see [Platforms](#platforms)).
+
+```yaml
+- run: v6blick check --json -- "$PREVIEW_HOST" > v6blick.json
+```
+
+Put `--` before a host that comes from somewhere you do not control, such as a pull request. Without it, a "host" of `--help` would print the help text and exit `0`.
+
+**5. "We want to stop paying for IPv4 addresses. What would break?"** The `v6only` mode is the true dependency list: every host the page needs that has no working IPv6 address, grouped by who serves it.
+
+```
+v6blick page https://metaincognita.com --mode v6only
+```
+
+**6. "Most of our visitors are on mobile networks. What do they hit today?"** Many mobile networks are IPv6-only with a NAT64 translator. That rescues IPv4-only hostnames, and it does not rescue an IPv4 address written straight into a page or a script (LIT-01).
+
+```
+v6blick page https://metaincognita.com --mode nat64
+```
+
+**7. "Which of our third parties hold us back?"** A third-party failure is a notice, because the site owner cannot fix it, only replace or self-host it. The page report groups failures by registrable domain, so the list reads as a list of suppliers to talk to.
+
+```
+v6blick page https://metaincognita.com --json
+```
+
+**8. "I am testing a build on my own machine before it goes live."** Private and loopback addresses are refused by default, so a page cannot steer the tool at an internal host. One flag permits them.
+
+```
+v6blick check http://localhost:8080/ --allow-private
+```
+
+With `--allow-private`, a name the public DNS does not know, such as `localhost` or a name in your hosts file, is looked up with this machine's own resolver.
+
+**9. "The check says IPv6 fails everywhere. Is it the sites, or is it this machine?"** `doctor` says whether this machine has working IPv6 and whether a Chrome or Chromium is installed. Without working IPv6, `check` says so and exits `3`; it never reports a site as broken because the test machine has no IPv6.
+
+```
+v6blick doctor
+```
 
 ## Why this is needed
 
@@ -54,25 +146,89 @@ Existing tools leave a gap:
 
 v6blick is a tool you run yourself, against a local build or a live URL, that covers the whole page.
 
-## What it looks like
+## Platforms
 
-Real output, for the author's own sites, on 14 November 2026.
+| | State |
+|---|---|
+| macOS | Developed and tested here |
+| Linux | Written to work, and not yet run there. Nothing in the code is specific to macOS; the tests need `127.0.0.1` and `::1` |
+| Windows | Untested. `doctor` knows where Chrome is installed on Windows; nothing else has been tried |
 
-`www.metaincognita.com` has IPv6 addresses and answers over them. It redirects to `metaincognita.com`, which has no AAAA record, so over IPv6 the visit ends at the redirect. A browser on a dual-stack connection never shows this, because it follows the redirect over IPv4:
+Two things v6blick needs from the machine it runs on:
 
-![Terminal output of v6blick check www.metaincognita.com: the host is an alias with two IPv4 and two IPv6 addresses, and both names resolve over IPv6 alone. Over IPv4 the redirect to https://metaincognita.com/ ends at a page with status 200. Over IPv6 it fails, because metaincognita.com has no IPv6 address. One warning, EQV-02, followed by what it means and how to fix it](screenshots/check-redirect.png)
+- **Working IPv6.** Without it there is nothing to compare, and `check` exits `3` and says so. `v6blick doctor` tells you in a second.
+- **A stable Rust toolchain, 1.88 or later**, to build it. There are no ready-built binaries yet.
 
-The bare domain itself, which has two A records and no AAAA record:
+**GitHub's hosted runners have no IPv6 connectivity by default**, so `v6blick check` exits `3` there. In GitHub Actions, use a self-hosted runner on a machine that has IPv6. Other CI services differ; run `v6blick doctor` as the first step to find out.
 
-![Terminal output of v6blick check metaincognita.com: two A records, no AAAA record, both IPv4 addresses answering on ports 443 and 80. One warning, ADR-01, the host has an IPv4 address and no IPv6 address, followed by what it means and how to fix it](screenshots/check-no-aaaa.png)
+## Install
 
-A clean site. `zoneblick.com` has four addresses in each family, and all eight serve the same certificate, the same redirect and the same page:
+There is one way to install v6blick today: build it from source with cargo. It takes about a minute.
 
-![Terminal output of v6blick check zoneblick.com: four IPv4 and four IPv6 addresses, all connecting in under 40 ms on ports 443 and 80 with the same certificate, and no findings](screenshots/check-clean.png)
+**Not available yet:** ready-built binaries, an install script, a Homebrew formula, `.deb` and `.rpm` packages, a Docker image and a GitHub Action. They belong to the packaging phase ([Build phases](#build-phases), Phase 5).
 
-`v6blick doctor` on a machine that can run the check. The IPv6 address shown here is from the range reserved for documentation; yours will be your own:
+### Build with cargo
+
+Needs a stable [Rust toolchain](https://rustup.rs), version 1.88 or later. Builds the latest source and puts the `v6blick` binary in `~/.cargo/bin`, which rustup adds to your PATH.
 
 ```
+cargo install --git https://github.com/cschweda/v6blick
+v6blick --version
+```
+
+### One exact version
+
+`v0.1.0` is the tag of Phase 0, after its security audit. Pinning the tag pins what you run.
+
+```
+cargo install --git https://github.com/cschweda/v6blick --tag v0.1.0
+```
+
+### From a clone
+
+The same result from a local checkout, if you want to read or change the code first.
+
+```
+git clone https://github.com/cschweda/v6blick
+cd v6blick
+cargo install --path .
+```
+
+Or run it without installing:
+
+```
+cargo run -- check metaincognita.com
+```
+
+### In a CI workflow
+
+Build it in the job, check that the runner has IPv6, then check the host. The exit code follows severity: `1` for notices or warnings, `2` for a critical finding, `3` when the run itself failed.
+
+```yaml
+- run: cargo install --git https://github.com/cschweda/v6blick --tag v0.1.0
+- run: v6blick doctor
+- run: v6blick check --json -- "$PREVIEW_HOST" > v6blick.json
+```
+
+Put `--` before a host that comes from somewhere you do not control, such as a pull request. Without it, a "host" of `--help` would print the help text and exit `0`. See [Platforms](#platforms) for runners without IPv6.
+
+### Update or remove
+
+Run the install again with `--force` to update. It is one binary, so removing it leaves nothing behind.
+
+```
+cargo install --force --git https://github.com/cschweda/v6blick
+cargo uninstall v6blick
+```
+
+## Try it
+
+Every command here works today, and every output shown is real, from 14 November 2026.
+
+**1. Can this machine run the check?** The IPv6 address below is from the range reserved for documentation; yours will be your own.
+
+```
+$ v6blick doctor
 v6blick doctor
 
   IPv4    working    a root server answered over IPv4
@@ -83,18 +239,63 @@ v6blick doctor
 This machine can run `v6blick check`.
 ```
 
-The page test is not built. This is the output the design aims at for it, a sketch and not real output:
+**2. Check a host.** A bare name is probed on port 443 and on port 80, at every address, at most four per family. The full output is in the screenshots [above](#what-it-looks-like).
 
 ```
-v6blick page https://metaincognita.com   IPv6 on this machine: working
+$ v6blick check metaincognita.com
+...
+Findings
+  WARNING (1)  wrong or missing for IPv6; visitors without IPv4 are affected, and it can be fixed
+    ADR-01  metaincognita.com.
+      the host has an IPv4 address and no IPv6 address
+      A: 75.2.60.5, 99.83.231.61
+      AAAA: (none)
+      Means: Visitors on an IPv6-only network cannot reach this host directly. Those
+             whose network has a NAT64 translator, as many mobile networks do, still can;
+             those without one cannot.
+      Fix:   Publish an AAAA record for the host. Many hosting providers and CDNs offer
+             IPv6 as a setting; if yours has none for this name, put the name behind a
+             service that does.
 
-  dual     42 requests   42 ok
-  nat64    42 requests   41 ok    1 refused
-  v6only   42 requests   33 ok    9 failed
-
-  warning  PGE-02  static.example.org      3 requests     no AAAA record
-  notice   PGE-02  fonts.thirdparty.example 4 requests    no AAAA record (third party)
+Summary: 0 critical, 1 warning, 0 notice, 0 info
 ```
+
+**3. Check one address, as given.** A full address is probed with its own scheme, port and path, and nothing else.
+
+```
+$ v6blick check https://www.metaincognita.com/
+```
+
+**4. Use the exit code.** `0` is clean, `1` notices or warnings, `2` a critical finding, `3` a failed run.
+
+```
+$ v6blick check zoneblick.com > /dev/null; echo $?
+0
+$ v6blick check metaincognita.com > /dev/null; echo $?
+1
+```
+
+**5. One line per finding, from the JSON.** With [`jq`](https://jqlang.org):
+
+```
+$ v6blick check www.metaincognita.com --json | jq -r '.findings[] | "\(.severity)  \(.check_id)  \(.summary)"'
+warning  EQV-02  https://www.metaincognita.com/ redirects to https://metaincognita.com/, which works over IPv4 and fails over IPv6
+```
+
+**6. Only what to do about it.**
+
+```
+$ v6blick check metaincognita.com --json | jq -r '.findings[] | .fix'
+Publish an AAAA record for the host. Many hosting providers and CDNs offer IPv6 as a setting; if yours has none for this name, put the name behind a service that does.
+```
+
+**7. A build on your own machine.** Private and loopback addresses are refused unless you permit them. With the flag, a name the public DNS does not know, such as `localhost`, is looked up with this machine's own resolver.
+
+```
+$ v6blick check http://localhost:8080/ --allow-private
+```
+
+**How long, and how much traffic.** A check takes from one to about five seconds. Measured: `metaincognita.com` took 9 DNS queries and 6 requests in under a second; `www.metaincognita.com`, an alias that redirects to another host, took 58 DNS queries and 16 requests in five seconds. Each address gets one `GET` on each port, and one more for each redirect that is followed.
 
 ## What a finding tells you
 
@@ -122,110 +323,7 @@ Under each finding the text output has two short paragraphs, `Means:` and `Fix:`
 | EQV-02 | Visitors on IPv6 get another answer: another page, an error, or a redirect that leads nowhere for them. | Serve the same configuration on the IPv6 side; give the target of a redirect an AAAA record. |
 | EQV-03 | Visitors on IPv6 may be shown a different page. A page that changes on every load can cause this by chance. | Compare the two responses. |
 
-## Try it
-
-Needs a stable [Rust toolchain](https://rustup.rs). There are no ready-built binaries yet. v6blick is developed and tested on macOS. It is written to run on Linux as well, where it has not been run yet, and it is untested on Windows.
-
-```
-cargo install --git https://github.com/cschweda/v6blick
-v6blick doctor                       # can this machine run the check?
-v6blick check metaincognita.com      # a host: https and http, every address
-v6blick check https://www.metaincognita.com/some/page    # one address, as given
-v6blick check metaincognita.com --json                   # one JSON document
-v6blick check http://localhost:8080/ --allow-private     # a build on your own machine
-```
-
-Or from a clone:
-
-```
-git clone https://github.com/cschweda/v6blick
-cd v6blick
-cargo run -- check metaincognita.com
-```
-
-A check takes from one to about five seconds. Measured on 14 November 2026: `metaincognita.com` took 9 DNS queries and 6 requests in under a second; `www.metaincognita.com`, an alias that redirects to another host, took 58 DNS queries and 16 requests in five seconds. Each address of the host, at most four per family, gets one `GET` on each port, and one more for each redirect that is followed.
-
-## Who it is for
-
-Eight situations v6blick is designed for, each with the command that answers it. `check` and `doctor` work today; `page` comes in Phases 1 to 3.
-
-**1. "We published an AAAA record last year. Does it still work?"** A dual-stack browser would hide a dead IPv6 address by falling back. `check` connects over each family on its own, so an address that no longer answers is a critical finding (RCH-01).
-
-```
-v6blick check metaincognita.com
-```
-
-**2. "Our IPv6 traffic goes through a different load balancer. Does it serve the same site?"** `check` compares the certificate, the status, the redirect and the body between the two families (EQV-01 to EQV-03). A stale certificate or an old redirect on the IPv6 side shows up here.
-
-```
-v6blick check https://www.metaincognita.com/
-```
-
-**3. "A pull request must not add something that breaks for IPv6-only visitors."** Run it in CI against the preview build. It exits `2` on a critical finding and `1` on warnings.
-
-```yaml
-- run: v6blick check --json -- "$PREVIEW_HOST" > v6blick.json
-```
-
-Put `--` before a host that comes from somewhere you do not control, such as a pull request. Without it, a "host" of `--help` would print the help text and exit `0`.
-
-**4. "We want to stop paying for IPv4 addresses. What would break?"** The `v6only` mode is the true dependency list: every host the page needs that has no working IPv6 address, grouped by who serves it.
-
-```
-v6blick page https://metaincognita.com --mode v6only
-```
-
-**5. "Most of our visitors are on mobile networks. What do they hit today?"** Many mobile networks are IPv6-only with a NAT64 translator. That rescues IPv4-only hostnames, and it does not rescue an IPv4 address written straight into a page or a script (LIT-01).
-
-```
-v6blick page https://metaincognita.com --mode nat64
-```
-
-**6. "Which of our third parties hold us back?"** A third-party failure is a notice, because the site owner cannot fix it, only replace or self-host it. The page report groups failures by registrable domain, so the list reads as a list of suppliers to talk to.
-
-```
-v6blick page https://metaincognita.com --json
-```
-
-**7. "I am testing a build on my own machine before it goes live."** Private and loopback addresses are refused by default, so a page cannot steer the tool at an internal host. One flag permits them.
-
-```
-v6blick check http://localhost:8080/ --allow-private
-```
-
-With `--allow-private`, a name the public DNS does not know, such as `localhost` or a name in your hosts file, is looked up with this machine's own resolver.
-
-**8. "The check says IPv6 fails everywhere. Is it the sites, or is it this machine?"** `doctor` says whether this machine has working IPv6 and whether a Chrome or Chromium is installed. Without working IPv6, `check` says so and exits `3`; it never reports a site as broken because the test machine has no IPv6.
-
-```
-v6blick doctor
-```
-
-## The three networks
-
-| Mode | Simulates | What can break |
-|---|---|---|
-| `dual` | An ordinary connection. The baseline. | Nothing, by definition |
-| `nat64` | An IPv6-only network with a translator, as on many mobile networks | IPv4 addresses written directly into pages or scripts |
-| `v6only` | An IPv6-only network with no translator | Every host without a working IPv6 address |
-
-`v6only` gives the true dependency list. `nat64` shows what a real mobile user without IPv4 would hit today.
-
-### How NAT64 is simulated
-
-A real NAT64 network lets a client reach an IPv4-only **hostname**, because the network's DNS invents an IPv6 address for it and a gateway translates the traffic. It does not help with an IPv4 address used **directly**, because no DNS lookup happens.
-
-The simulation applies exactly that rule:
-
-- A hostname with an IPv6 address: connect over IPv6.
-- A hostname with only an IPv4 address: allowed. Connect over IPv4 and mark the request "reached through translation".
-- A literal IPv4 address: refused, and reported.
-
-This needs no gateway and no special network. A `--nat64-prefix` option will point the tool at a real gateway for verification.
-
-One caveat is stated in every report: many phones run a second translator on the device (CLAT) that makes literal IPv4 addresses work too. A literal-address finding therefore reads "fails on IPv6-only networks without CLAT".
-
-## Commands
+## Command reference
 
 ```
 v6blick check <host-or-url>                   # DNS and connection checks, no browser    (works today)
@@ -240,6 +338,20 @@ v6blick page --urls urls.txt                  # many pages                      
 
 A bare host name is probed as `https://host/` and `http://host/`. A full address is probed as given: its scheme, port and path. An IP address in place of a name is refused, because there is nothing to compare.
 
+### Options
+
+| Option | For | Meaning |
+|---|---|---|
+| `--json` | `check` | Print one JSON document on stdout instead of text. See [JSON output](#json-output) |
+| `--allow-private` | `check` | Let private, loopback and link-local addresses be contacted, for a build on your own machine or network. Also lets a name the public DNS does not know be looked up with this machine's resolver |
+| `--` | `check` | Everything after it is the host, never an option. Use it when the host comes from somewhere you do not control |
+| `-h`, `--help` | all | Print help |
+| `-V`, `--version` | `v6blick` | Print the version |
+
+Colour is used when the output is a terminal. Set the `NO_COLOR` environment variable to switch it off.
+
+The limits are fixed in this version and are not options: four addresses per family, five redirects, 1 MiB of a body, 30 seconds for a probe and two minutes for a run. [Safety and politeness](#safety-and-politeness) has them all.
+
 ### What `check` does
 
 1. **Looks up the host.** A and AAAA records, following CNAMEs. v6blick resolves from the root servers itself and asks no recursive resolver. There is one exception: with `--allow-private`, a name the public DNS says does not exist is looked up with this machine's own resolver.
@@ -250,13 +362,24 @@ A bare host name is probed as `https://host/` and `http://host/`. A full address
 
 Before any of this, `check` finds out whether this machine has working IPv4 and IPv6, by asking a root server over each. Without IPv6 it says so and exits `3`. It never reports a site as broken because the test machine has no IPv6.
 
-## Checks
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Clean: no findings above `info` |
+| `1` | Notices or warnings, nothing critical |
+| `2` | At least one critical finding |
+| `3` | The run itself failed: a bad command line, a name that does not exist, no working IPv6 on this machine, a site that answers on neither family, or a run that did not finish in two minutes |
+
+These are zoneblick's exit codes. A bad command line exits `3`, not `2`.
+
+### Checks
 
 Severity levels are the same as zoneblick's: **critical**, **warning**, **notice**, **info**. Check IDs are stable. The ten checks of the first three groups work today.
 
 A host may have several addresses in each family, and the servers behind them need not be identical. The comparisons therefore report a difference only when no IPv6 address agrees with any IPv4 address.
 
-### Addresses (`ADR`), working
+#### Addresses (`ADR`), working
 
 | ID | Check | Severity |
 |---|---|---|
@@ -264,7 +387,7 @@ A host may have several addresses in each family, and the servers behind them ne
 | ADR-02 | An AAAA record holds an address no client can use: loopback, private, IPv4-mapped, or a retired transition range | warning |
 | ADR-03 | The host's zone cannot be resolved over IPv6 alone: at some level of the delegation no nameserver is reachable over IPv6 | warning |
 
-### Reachability (`RCH`), working
+#### Reachability (`RCH`), working
 
 | ID | Check | Severity |
 |---|---|---|
@@ -275,7 +398,7 @@ A host may have several addresses in each family, and the servers behind them ne
 
 RCH-01 is critical because a published address that does not answer is worse than none: every IPv6-capable client tries it first. RCH-03 fires when IPv6 takes more than 250 ms longer to connect than IPv4, the delay after which a browser that races the two families starts its IPv4 attempt. RCH-04 fires when a failing IPv6 attempt takes more than one second to fail and an IPv4 address works.
 
-### Equivalence (`EQV`), working
+#### Equivalence (`EQV`), working
 
 | ID | Check | Severity |
 |---|---|---|
@@ -285,7 +408,7 @@ RCH-01 is critical because a published address that does not answer is worse tha
 
 EQV-02 looks at the first response and at where the redirects end, so it also finds a redirect to a host that has no IPv6 address. EQV-03 is a notice because dynamic pages differ between any two requests. It compares the structure of the page (the sequence of its HTML tags), not its bytes, and fires when the structure differs or the sizes are more than a fifth apart.
 
-### Page (`PGE`), needs a browser, Phase 1
+#### Page (`PGE`), needs a browser, Phase 1
 
 | ID | Check | Severity |
 |---|---|---|
@@ -294,29 +417,18 @@ EQV-02 looks at the first response and at where the redirects end, so it also fi
 | PGE-03 | A resource's host has an IPv6 address and the request still fails over IPv6 | warning |
 | PGE-04 | A redirect leads to a host that is unreachable in this mode | warning |
 
-### Literal addresses (`LIT`), needs a browser, Phase 2
+#### Literal addresses (`LIT`), needs a browser, Phase 2
 
 | ID | Check | Severity |
 |---|---|---|
 | LIT-01 | The page requests a URL whose host is a literal IPv4 address | warning |
 | LIT-02 | A literal IPv4 address appears in the page's HTML, CSS or script text and was not requested | notice |
 
-### Packet size (`MTU`), Phase 4
+#### Packet size (`MTU`), Phase 4
 
 | ID | Check | Severity |
 |---|---|---|
 | MTU-01 | A large response stalls over IPv6 and not over IPv4, which points to a path that drops "packet too big" messages | warning |
-
-## Exit codes
-
-| Code | Meaning |
-|---|---|
-| `0` | Clean: no findings above `info` |
-| `1` | Notices or warnings, nothing critical |
-| `2` | At least one critical finding |
-| `3` | The run itself failed: a bad command line, a name that does not exist, no working IPv6 on this machine, a site that answers on neither family, or a run that did not finish in two minutes |
-
-These are zoneblick's exit codes. A bad command line exits `3`, not `2`.
 
 ## JSON output
 
@@ -398,6 +510,30 @@ A run that fails prints a short document instead, also on stdout, and exits `3`:
 ```
 
 `error.kind` is one of `invalid_target`, `no_network`, `no_ipv6`, `no_ipv4`, `host_not_found`, `no_addresses`, `lookup_failed`, `unreachable` (nothing accepts a connection over either family), `not_contacted` (every address is one v6blick does not contact, for example a private one without `--allow-private`), `deadline` or `tls_setup`.
+
+## The three networks
+
+| Mode | Simulates | What can break |
+|---|---|---|
+| `dual` | An ordinary connection. The baseline. | Nothing, by definition |
+| `nat64` | An IPv6-only network with a translator, as on many mobile networks | IPv4 addresses written directly into pages or scripts |
+| `v6only` | An IPv6-only network with no translator | Every host without a working IPv6 address |
+
+`v6only` gives the true dependency list. `nat64` shows what a real mobile user without IPv4 would hit today.
+
+### How NAT64 is simulated
+
+A real NAT64 network lets a client reach an IPv4-only **hostname**, because the network's DNS invents an IPv6 address for it and a gateway translates the traffic. It does not help with an IPv4 address used **directly**, because no DNS lookup happens.
+
+The simulation applies exactly that rule:
+
+- A hostname with an IPv6 address: connect over IPv6.
+- A hostname with only an IPv4 address: allowed. Connect over IPv4 and mark the request "reached through translation".
+- A literal IPv4 address: refused, and reported.
+
+This needs no gateway and no special network. A `--nat64-prefix` option will point the tool at a real gateway for verification.
+
+One caveat is stated in every report: many phones run a second translator on the device (CLAT) that makes literal IPv4 addresses work too. A literal-address finding therefore reads "fails on IPv6-only networks without CLAT".
 
 ## How it works
 
@@ -607,6 +743,14 @@ While Phase 0 was written, an automated security reviewer read commits in the ba
 ## Responsible use
 
 Test your own sites, or sites you have permission to test. A check is ordinary traffic: a few DNS queries and a handful of HTTP requests.
+
+## Privacy
+
+v6blick stores nothing and reports to nobody. It keeps no history, writes no file, and has no telemetry. What it sends is what a check needs: DNS queries to the root servers and the nameservers on the way to the host, and plain `GET` requests to the host and to where its redirects lead, with a `User-Agent` that names v6blick. The JSON output holds the host's public addresses and certificate fingerprints, and nothing about the machine that ran the check except that IPv4 and IPv6 work there.
+
+`v6blick doctor` prints this machine's own IPv6 address on your screen, and sends it nowhere.
+
+The project site is one static page on GitHub Pages. It sets no cookies and has no analytics; it loads two fonts from Google Fonts.
 
 ## License
 
