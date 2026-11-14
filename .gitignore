@@ -1,0 +1,17 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# v6blick output
+/reports/
+*.report.html
+
+# macOS and editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+.env
+.env.*
