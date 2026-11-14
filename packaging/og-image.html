@@ -1,0 +1,72 @@
+<!-- Source of docs/og-image.png. Render at 1200x630 with headless Chrome:
+     chrome --headless=new --hide-scrollbars --window-size=1200,630 --screenshot=docs/og-image.png packaging/og-image.html
+     Same family as zoneblick's card (dark ground, Inter and IBM Plex Mono, a square mark), with its own
+     accent colour, its own two-square mark and the three-network bars in place of the nameserver strip. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>og card</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#0b0b0c}
+#card{width:1200px;height:630px;background:#0b0b0c;color:#f0efea;font-family:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.top{position:absolute;left:64px;right:64px;top:44px;display:flex;align-items:center;justify-content:space-between}
+.mark{display:flex;align-items:center;gap:8px;font-weight:800;font-size:68px;letter-spacing:-.035em;line-height:1}
+.mark i{width:28px;height:28px;display:block;margin-top:6px;border:3px solid #55555b}
+.mark i+i{background:#4da3ff;border-color:#4da3ff;margin-right:12px}
+.tags{font-family:"IBM Plex Mono",monospace;font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:#a3a29b;text-align:right;line-height:1.2}
+.tags b{display:inline-block;margin-top:16px;font-weight:500;color:#4da3ff;border:1px solid #4da3ff;padding:3px 14px;line-height:1.7}
+h1{position:absolute;left:64px;top:152px;margin:0;font-weight:800;font-size:90px;line-height:.94;letter-spacing:-.05em;white-space:nowrap}
+h1 em{font-style:normal;color:#4da3ff}
+.net{position:absolute;left:0;right:0;bottom:0;height:116px;background:#131315;border-top:1px solid #2b2b2f;display:grid;grid-template-columns:392px 372px 1fr;font-family:"IBM Plex Mono",monospace}
+.net div{padding:18px 0 0 28px;border-left:1px solid #2b2b2f}
+.net div:first-child{padding-left:64px;border-left:0}
+.net span{display:block;font-size:15px;color:#a3a29b;letter-spacing:.02em}
+.net span b{font-weight:500;color:#f0efea}
+.net strong{display:block;font-weight:500;font-size:23px;margin-top:4px}
+.net .bad strong{color:#ff5a45}
+.net p{margin:10px 0 0;display:flex;gap:2px}
+.net p i{width:5px;height:12px;background:#d9d8d2;display:block}
+.net p i.t{background:#4da3ff}
+.net p i.x{background:#ff5a45}
+.lede{position:absolute;left:64px;top:344px;margin:0;width:650px;font-size:23px;line-height:1.36;color:#a3a29b;letter-spacing:-.005em}
+.lede b{color:#f0efea;font-weight:500}
+.chips{position:absolute;left:64px;right:64px;top:462px;display:flex;gap:12px;font-family:"IBM Plex Mono",monospace;font-size:14px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.chips span{border:1px solid #2b2b2f;padding:6px 12px;color:#f0efea}
+.diff{position:absolute;right:64px;top:346px;width:400px;font-family:"IBM Plex Mono",monospace;font-size:14.5px;line-height:1.75;white-space:nowrap;border:1px solid #2b2b2f;background:#131315;padding:8px 0}
+.diff div{padding:0 14px;white-space:pre;color:#a3a29b}
+.diff b{font-weight:500;color:#ff5a45}
+.diff u{text-decoration:none;color:#f0efea}
+</style>
+</head>
+<body>
+<div id="card">
+  <div class="top">
+    <div class="mark"><i></i><i></i>v6blick</div>
+    <div class="tags">IPv6 readiness test for websites<br><b>Written in Rust</b></div>
+  </div>
+  <h1>See your site<br><em>without IPv4.</em></h1>
+  <p class="lede">Loads a host or a whole page from <b>three kinds of network</b> and names <b>every resource that breaks</b> when there is no IPv4, down to one third-party script.</p>
+  <div class="diff"><div><b>warning</b> LIT-01  <u>192.0.2.44/track.gif</u></div><div><b>warning</b> PGE-02  <u>static.example.org</u></div><div>notice  PGE-02  <u>fonts.thirdparty.example</u></div></div>
+  <div class="chips"><span>Three network modes</span><span>Whole-page test</span><span>JSON for CI</span><span>No account</span><span>One binary</span></div>
+  <div class="net">
+    <div><span><b>dual</b> &nbsp;an ordinary connection</span><strong>42 of 42 ok</strong><p data-x="" data-t=""></p></div>
+    <div><span><b>nat64</b> &nbsp;IPv6-only, translator</span><strong>41 of 42 ok</strong><p data-x="17" data-t="3,4,9,12,13,22,26,30"></p></div>
+    <div class="bad"><span><b>v6only</b> &nbsp;IPv6-only, no translator</span><strong>33 of 42 ok</strong><p data-x="3,4,9,12,13,17,22,26,30" data-t=""></p></div>
+  </div>
+<script>
+// One bar per request: light is ok, blue is reached through translation, red failed.
+for (const p of document.querySelectorAll('.net p')) {
+  const x = p.dataset.x.split(','), t = p.dataset.t.split(',');
+  for (let n = 0; n < 42; n++) {
+    const i = document.createElement('i');
+    if (x.includes(String(n))) i.className = 'x'; else if (t.includes(String(n))) i.className = 't';
+    p.appendChild(i);
+  }
+}
+</script>
+</div>
+</body>
+</html>
