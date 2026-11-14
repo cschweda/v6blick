@@ -9,6 +9,11 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 
 use crate::observe::Scheme;
 
+/// An address may be at most this long. Longer ones are not followed
+/// and not printed.
+pub const MAX_URL: usize = 2048;
+/// One chunk-size line of a chunked body may be at most this long.
+const MAX_CHUNK_LINE: usize = 1024;
 /// The head of a response may be at most this large.
 const MAX_HEAD: usize = 64 * 1024;
 /// A response may carry at most this many header lines.
@@ -30,6 +35,9 @@ impl Url {
     /// name, an empty host or anything that is not printable is refused.
     pub fn parse(input: &str) -> Result<Url, String> {
         let input = input.trim();
+        if input.len() > MAX_URL {
+            return Err(format!("the address is longer than {MAX_URL} characters"));
+        }
         if input.bytes().any(|b| b <= 0x20 || b == 0x7f) {
             return Err("the address holds a space or a control character".to_string());
         }
@@ -54,26 +62,44 @@ impl Url {
             if host.parse::<std::net::Ipv6Addr>().is_err() {
                 return Err(format!("'{host}' is not an IPv6 address"));
             }
-            (host, after.strip_prefix(':'))
+            // Nothing may follow the bracket but a port.
+            let port = match after {
+                "" => None,
+                _ => Some(
+                    after
+                        .strip_prefix(':')
+                        .ok_or_else(|| "the address has text after ']'".to_string())?,
+                ),
+            };
+            (host.to_ascii_lowercase(), port)
         } else {
-            match authority.rsplit_once(':') {
+            // One colon at most, before the port. An IPv6 address must
+            // be in brackets.
+            let (host, port) = match authority.split_once(':') {
                 Some((host, port)) => (host, Some(port)),
                 None => (authority, None),
+            };
+            let host = host.strip_suffix('.').unwrap_or(host).to_ascii_lowercase();
+            let plain = |b: u8| b.is_ascii_alphanumeric() || b"-._".contains(&b);
+            if host.is_empty()
+                || host.len() > 253
+                || !host.bytes().all(plain)
+                || host.split('.').any(str::is_empty)
+            {
+                return Err("the address does not name a host".to_string());
             }
+            (host, port)
         };
         let port = match port {
-            Some(text) => text
-                .parse::<u16>()
-                .ok()
+            Some(text) => Some(text)
+                .filter(|t| !t.is_empty() && t.bytes().all(|b| b.is_ascii_digit()))
+                .and_then(|t| t.parse::<u16>().ok())
                 .filter(|p| *p != 0)
-                .ok_or_else(|| format!("'{text}' is not a port"))?,
+                .ok_or_else(|| {
+                    "the address has a port that is not a number from 1 to 65535".to_string()
+                })?,
             None => scheme.default_port(),
         };
-        let host = host.trim_end_matches('.').to_ascii_lowercase();
-        let plain = |b: u8| b.is_ascii_alphanumeric() || b"-._:".contains(&b);
-        if host.is_empty() || !host.bytes().all(plain) {
-            return Err(format!("'{host}' is not a host name"));
-        }
         let path = match path.as_bytes().first() {
             None => "/".to_string(),
             Some(b'?') => format!("/{}", escape(path)),
@@ -93,18 +119,23 @@ impl Url {
         if location.is_empty() {
             return Err("the Location header is empty".to_string());
         }
-        let lower = location.to_ascii_lowercase();
-        if lower.starts_with("http://") || lower.starts_with("https://") {
-            return Url::parse(location);
+        if location.len() > MAX_URL {
+            return Err(format!(
+                "the Location header is longer than {MAX_URL} characters"
+            ));
+        }
+        // A scheme is what stands before a colon in the first part of
+        // the value: before any `/`, `?` or `#`. A colon further on, as
+        // in `/login?next=https://...`, is part of a relative address.
+        let first = location.split(['/', '?', '#']).next().unwrap_or_default();
+        if let Some((scheme, _)) = first.split_once(':') {
+            return match scheme.to_ascii_lowercase().as_str() {
+                "http" | "https" => Url::parse(location),
+                _ => Err("the Location header is not an http or https address".to_string()),
+            };
         }
         if let Some(rest) = location.strip_prefix("//") {
             return Url::parse(&format!("{}://{rest}", self.scheme.as_str()));
-        }
-        if location.contains("://")
-            || lower.starts_with("javascript:")
-            || lower.starts_with("data:")
-        {
-            return Err("the Location header is not an http or https address".to_string());
         }
         let location = location.split('#').next().unwrap_or_default();
         let own_path = self.path.split('?').next().unwrap_or("/");
@@ -128,8 +159,14 @@ impl Url {
             joined.push('?');
             joined.push_str(query);
         }
+        let path = escape(&joined);
+        if path.len() > MAX_URL {
+            return Err(format!(
+                "the redirect leads to an address longer than {MAX_URL} characters"
+            ));
+        }
         Ok(Url {
-            path: escape(&joined),
+            path,
             ..self.clone()
         })
     }
@@ -385,8 +422,10 @@ pub async fn read_response<S: AsyncRead + Unpin>(
         .and_then(|v| v.parse::<u64>().ok());
     let mut body = Vec::new();
     let ended = if chunked {
-        let mut budget = MAX_HEAD;
         loop {
+            // Each size line has its own limit; how many chunks a body
+            // comes in is the server's business.
+            let mut budget = MAX_CHUNK_LINE;
             let Some(line) = reader.line(&mut budget).await? else {
                 break Took::Eof;
             };
@@ -410,6 +449,12 @@ pub async fn read_response<S: AsyncRead + Unpin>(
             .take(length.unwrap_or(u64::MAX), &mut body, body_limit)
             .await?
     };
+    // A body that stops before the length it announced, or before its
+    // last chunk, is not the page: reporting its size and hash as if it
+    // were would compare two halves.
+    if ended == Took::Eof && (chunked || length.is_some()) {
+        return Err("the connection closed before the body was complete".to_string());
+    }
     response.truncated = ended == Took::Limit;
     response.body = body;
     Ok(response)
@@ -475,6 +520,19 @@ pub fn shape(body: &[u8]) -> Vec<u8> {
         }
     }
     out
+}
+
+/// The text of a page's first `title` element, with runs of white space
+/// as one space, at most 200 characters. Unlike the rest of a page's
+/// text, a title rarely changes from one load to the next.
+pub fn title(body: &[u8]) -> Option<String> {
+    let open = find(body, 0, b"<title")?;
+    let start = open + body[open..].iter().position(|b| *b == b'>')? + 1;
+    let end = find(body, start, b"</title")?;
+    let text = String::from_utf8_lossy(&body[start..end]);
+    let text: String = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let text: String = text.chars().take(200).collect();
+    (!text.is_empty()).then_some(text)
 }
 
 /// The first place at or after `from` where `needle` is found, ignoring
@@ -663,6 +721,78 @@ mod tests {
         ]
         .concat();
         assert!(read(&huge, 100).await.is_err());
+    }
+
+    #[test]
+    fn odd_authorities_are_refused() {
+        for bad in [
+            "http://example.org:80:80/",
+            "http://[::1]evil/",
+            "http://::1:80/",
+            "http://example.org:+80/",
+            "http://a..b/",
+            "http://.example.org/",
+            "http://example.org:/",
+        ] {
+            assert!(Url::parse(bad).is_err(), "{bad}");
+        }
+        assert_eq!(
+            Url::parse("HTTP://[2001:DB8::1]:8443/").unwrap().host,
+            "2001:db8::1"
+        );
+        assert!(Url::parse(&format!("https://example.org/{}", "a".repeat(MAX_URL))).is_err());
+    }
+
+    #[test]
+    fn a_colon_later_in_a_location_does_not_make_a_scheme() {
+        let base = Url::parse("https://example.org/a/b/c?x=1").unwrap();
+        let to = |location: &str| base.join(location).unwrap().to_string();
+        assert_eq!(
+            to("/login?next=https://example.org/account"),
+            "https://example.org/login?next=https://example.org/account"
+        );
+        assert_eq!(
+            to("?next=http://x.example/"),
+            "https://example.org/a/b/c?next=http://x.example/"
+        );
+        assert_eq!(to("HTTPS://Other.Example/z"), "https://other.example/z");
+        assert!(base.join("mailto:someone@example.org").is_err());
+        assert!(base.join(&format!("/{}", "a".repeat(MAX_URL))).is_err());
+    }
+
+    #[tokio::test]
+    async fn a_body_that_ends_early_is_not_a_response() {
+        for wire in [
+            &b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nshort"[..],
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nab",
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nab\r\n",
+        ] {
+            let err = read(wire, 100).await.unwrap_err();
+            assert!(err.contains("before the body was complete"), "{err}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_body_in_very_many_chunks_is_read() {
+        let mut wire = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n".to_vec();
+        for _ in 0..20_000 {
+            wire.extend_from_slice(b"10\r\n0123456789abcdef\r\n");
+        }
+        wire.extend_from_slice(b"0\r\n\r\n");
+        let r = read(&wire, 1024 * 1024).await.unwrap();
+        assert_eq!(r.body.len(), 320_000);
+    }
+
+    #[test]
+    fn the_title_is_read() {
+        assert_eq!(
+            title(b"<html><head><TITLE lang=en>\n  Example\tBank </title></head>").as_deref(),
+            Some("Example Bank")
+        );
+        assert_eq!(title(b"<html><body>no title</body></html>"), None);
+        assert_eq!(title(b"<title></title>"), None);
+        let long = [b"<title>".as_slice(), &[b'x'; 500], b"</title>"].concat();
+        assert_eq!(title(&long).unwrap().len(), 200);
     }
 
     #[test]

@@ -87,6 +87,18 @@ pub enum RunError {
     LookupFailed { host: String, detail: String },
     #[error("TLS could not be set up: {0}")]
     Tls(#[from] rustls::Error),
+    #[error(
+        "nothing accepts a connection at {host}, over IPv4 or over IPv6, so there is nothing to compare. The site may be down, or this machine may be unable to reach it"
+    )]
+    Unreachable { host: String },
+    #[error(
+        "every address of {host} is one v6blick does not contact ({reason}), so nothing was tested"
+    )]
+    NotContacted { host: String, reason: String },
+    #[error(
+        "the run did not finish in {secs} s and was stopped. Nothing is reported, because half a comparison would mislead"
+    )]
+    Deadline { secs: u64 },
 }
 
 impl RunError {
@@ -101,6 +113,9 @@ impl RunError {
             RunError::NoAddresses { .. } => "no_addresses",
             RunError::LookupFailed { .. } => "lookup_failed",
             RunError::Tls(_) => "tls_setup",
+            RunError::Deadline { .. } => "deadline",
+            RunError::Unreachable { .. } => "unreachable",
+            RunError::NotContacted { .. } => "not_contacted",
         }
     }
 }
@@ -145,8 +160,13 @@ async fn find_host(
     allow_private: bool,
 ) -> HostLookup {
     let lookup = resolve::lookup_host(client, vantage, host).await;
-    let found = !lookup.a.addresses.is_empty() || !lookup.aaaa.addresses.is_empty();
-    if found || !allow_private {
+    // Only a definite "no such name" from the public DNS sends the
+    // question to this machine's resolver. A zone that merely fails to
+    // answer must not get the name looked up somewhere else, with the
+    // IPv6-only walk skipped.
+    let no_such_name =
+        lookup.a.status == LookupStatus::Nxdomain && lookup.aaaa.status == LookupStatus::Nxdomain;
+    if !allow_private || !no_such_name {
         return lookup;
     }
     let system = resolve::lookup_host_system(host).await;
@@ -159,8 +179,22 @@ async fn find_host(
 
 /// Everything a `check` run does on the network: find out which address
 /// families work here, look the host up, walk to it over IPv6 only, and
-/// probe each address.
+/// probe each address. The whole of it has one deadline.
 pub async fn observe(
+    target: &str,
+    client: Arc<Client>,
+    config: ProbeConfig,
+) -> Result<Observation, RunError> {
+    let deadline = config.run_deadline;
+    match tokio::time::timeout(deadline, observe_within(target, client, config)).await {
+        Ok(outcome) => outcome,
+        Err(_) => Err(RunError::Deadline {
+            secs: deadline.as_secs(),
+        }),
+    }
+}
+
+async fn observe_within(
     target: &str,
     client: Arc<Client>,
     config: ProbeConfig,
@@ -218,15 +252,33 @@ pub async fn observe(
     };
     let probes = probe::probe_all(&urls, &addresses, Arc::new(config), redirects);
     let (ipv6_walks, probes) = tokio::join!(walks, probes);
+    let probes = probes?;
+
+    // A report compares two families. When no connection opened at all
+    // there is nothing to compare, and saying "IPv6 is broken" of a site
+    // that is down, or of addresses that were never contacted, would be
+    // a false finding.
+    if !probes.iter().any(|p| p.connect.connected_ms().is_some()) {
+        let refused = probes.iter().find_map(|p| match &p.connect {
+            crate::observe::Connect::NotProbed { reason } => Some(reason.clone()),
+            _ => None,
+        });
+        let tried = probes.iter().any(|p| p.connect.is_failure());
+        return Err(match refused {
+            Some(reason) if !tried => RunError::NotContacted { host, reason },
+            _ => RunError::Unreachable { host },
+        });
+    }
 
     Ok(Observation {
         host,
-        target: target.trim().to_string(),
+        // What was typed may come from a pull request, and is printed.
+        target: printable(target.trim()),
         started_at_unix,
         vantage,
         lookup,
         ipv6_walks,
-        probes: probes?,
+        probes,
     })
 }
 
@@ -272,7 +324,10 @@ pub fn report(
 
 /// `v6blick check`.
 pub async fn check(args: &CheckArgs, color: bool) -> CommandOutput {
-    let client = Arc::new(Client::live(NetConfig::default()));
+    let client = Arc::new(Client::live(NetConfig {
+        allow_private: args.allow_private,
+        ..NetConfig::default()
+    }));
     let config = ProbeConfig {
         allow_private: args.allow_private,
         ..ProbeConfig::default()

@@ -40,6 +40,7 @@ pub fn response(status: u16, location: Option<&str>, body: &str) -> Response {
         body_sha256: format!("body:{body}"),
         // Stands in for the structure: everything before the first space.
         shape_sha256: format!("shape:{}", body.split(' ').next().unwrap_or_default()),
+        title: None,
     }
 }
 
@@ -103,6 +104,7 @@ pub fn healthy() -> Observation {
             name: "www.example.org.".to_string(),
             path: vec![],
             failed_at: None,
+            unfinished: None,
         }],
         probes: vec![
             probe(V4, Scheme::Https, 20),

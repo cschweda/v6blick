@@ -137,6 +137,12 @@ fn walks(w: &mut String, st: &Style, report: &Report) {
         let mut zones = vec![".".to_string()];
         zones.extend(walk.path.iter().map(|s| s.to_zone.clone()));
         let path = zones.join(" -> ");
+        if let Some(why) = &walk.unfinished {
+            let _ = writeln!(w, "  {}  not finished", walk.name);
+            let _ = writeln!(w, "    {}", st.dim(&path));
+            let _ = writeln!(w, "    {}", st.dim(why));
+            continue;
+        }
         match &walk.failed_at {
             None => {
                 let _ = writeln!(w, "  {}  {}", walk.name, st.good("reached"));
@@ -354,8 +360,12 @@ fn answer_lines(family: &str, a: &Answer) -> Vec<String> {
 }
 
 fn body_line(family: &str, b: &ServedBody) -> String {
+    let title = match &b.title {
+        Some(title) => format!(", title \"{title}\""),
+        None => String::new(),
+    };
     format!(
-        "{family} {}: {} bytes{}, structure {}",
+        "{family} {}: {} bytes{}, structure {}{title}",
         b.address,
         b.bytes,
         if b.truncated { " (cut off)" } else { "" },
@@ -375,7 +385,9 @@ pub fn evidence_lines(evidence: &Evidence) -> Vec<String> {
             "AAAA: (none)".to_string(),
         ],
         Evidence::UnusableAaaa { address, reason } => {
-            vec![format!("{address}: {}", reason.describe())]
+            // Never an address first on a line: one that starts with
+            // `::` would look like a command to a CI runner.
+            vec![format!("AAAA {address}: {}", reason.describe())]
         }
         Evidence::Ipv6WalkFailed {
             zone, detail, path, ..

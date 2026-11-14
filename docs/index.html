@@ -602,6 +602,7 @@ v6blick page --urls urls.txt</pre>
           </article>
         </div>
         <p class="status"><b>Early days</b><span>Phase 0 works: <span class="mono">check</span> and <span class="mono">doctor</span>, ten checks, text and JSON output. There is no release yet, and the whole-page test is not built. The <a href="https://github.com/cschweda/v6blick#build-phases">README</a> lists the phases and what each one delivers; the <a href="https://github.com/cschweda/v6blick/blob/main/DESIGN.md">design</a> has the rest.</span></p>
+        <p class="status"><b>Security audit</b><span>One red team and blue team audit so far, of 0.1.0 on 14 November 2026: no critical or high finding, five medium and twelve low, all fixed but two low ones that are documented. The <a href="https://github.com/cschweda/v6blick#security-audits">README</a> keeps the full record: what broke, what held, and what is still open.</span></p>
         <p class="status"><b>Polite by design</b><span>Bounded concurrency, a timeout on every step, at most one retry, plain GET requests with a <span class="mono">User-Agent</span> that names v6blick, and no crawling beyond what was asked for. Test your own sites, or sites you have permission to test.</span></p>
       </div>
     </div>

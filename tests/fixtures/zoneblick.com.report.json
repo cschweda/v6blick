@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "host": "zoneblick.com.",
   "target": "zoneblick.com",
-  "started_at_unix": 1794677735,
+  "started_at_unix": 1794679204,
   "vantage": {
     "ipv4": true,
     "ipv6": true
@@ -195,11 +195,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 15
+        "ms": 18
       },
       "tls": {
         "result": "ok",
-        "ms": 24,
+        "ms": 29,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -219,7 +219,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -230,11 +231,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 16
+        "ms": 19
       },
       "tls": {
         "result": "ok",
-        "ms": 26,
+        "ms": 29,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -254,7 +255,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -265,112 +267,7 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 15
-      },
-      "tls": {
-        "result": "ok",
-        "ms": 38,
-        "certificate": {
-          "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
-          "names": [
-            "www.zoneblick.com",
-            "zoneblick.com"
-          ],
-          "not_after_unix": 1802357127,
-          "covers_host": true
-        }
-      },
-      "exchanges": [
-        {
-          "url": "https://zoneblick.com/",
-          "address": "185.199.110.153",
-          "result": "response",
-          "status": 200,
-          "body_bytes": 54395,
-          "body_truncated": false,
-          "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
-        }
-      ]
-    },
-    {
-      "family": "ipv4",
-      "address": "185.199.111.153",
-      "port": 443,
-      "scheme": "https",
-      "connect": {
-        "result": "connected",
-        "ms": 16
-      },
-      "tls": {
-        "result": "ok",
-        "ms": 25,
-        "certificate": {
-          "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
-          "names": [
-            "www.zoneblick.com",
-            "zoneblick.com"
-          ],
-          "not_after_unix": 1802357127,
-          "covers_host": true
-        }
-      },
-      "exchanges": [
-        {
-          "url": "https://zoneblick.com/",
-          "address": "185.199.111.153",
-          "result": "response",
-          "status": 200,
-          "body_bytes": 54395,
-          "body_truncated": false,
-          "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
-        }
-      ]
-    },
-    {
-      "family": "ipv6",
-      "address": "2606:50c0:8000::153",
-      "port": 443,
-      "scheme": "https",
-      "connect": {
-        "result": "connected",
-        "ms": 21
-      },
-      "tls": {
-        "result": "ok",
-        "ms": 14,
-        "certificate": {
-          "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
-          "names": [
-            "www.zoneblick.com",
-            "zoneblick.com"
-          ],
-          "not_after_unix": 1802357127,
-          "covers_host": true
-        }
-      },
-      "exchanges": [
-        {
-          "url": "https://zoneblick.com/",
-          "address": "2606:50c0:8000::153",
-          "result": "response",
-          "status": 200,
-          "body_bytes": 54395,
-          "body_truncated": false,
-          "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
-        }
-      ]
-    },
-    {
-      "family": "ipv6",
-      "address": "2606:50c0:8001::153",
-      "port": 443,
-      "scheme": "https",
-      "connect": {
-        "result": "connected",
-        "ms": 26
+        "ms": 22
       },
       "tls": {
         "result": "ok",
@@ -388,13 +285,122 @@
       "exchanges": [
         {
           "url": "https://zoneblick.com/",
+          "address": "185.199.110.153",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 54395,
+          "body_truncated": false,
+          "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
+        }
+      ]
+    },
+    {
+      "family": "ipv4",
+      "address": "185.199.111.153",
+      "port": 443,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 23
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 20,
+        "certificate": {
+          "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
+          "names": [
+            "www.zoneblick.com",
+            "zoneblick.com"
+          ],
+          "not_after_unix": 1802357127,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://zoneblick.com/",
+          "address": "185.199.111.153",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 54395,
+          "body_truncated": false,
+          "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
+        }
+      ]
+    },
+    {
+      "family": "ipv6",
+      "address": "2606:50c0:8000::153",
+      "port": 443,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 20
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 23,
+        "certificate": {
+          "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
+          "names": [
+            "www.zoneblick.com",
+            "zoneblick.com"
+          ],
+          "not_after_unix": 1802357127,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://zoneblick.com/",
+          "address": "2606:50c0:8000::153",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 54395,
+          "body_truncated": false,
+          "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
+        }
+      ]
+    },
+    {
+      "family": "ipv6",
+      "address": "2606:50c0:8001::153",
+      "port": 443,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 20
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 18,
+        "certificate": {
+          "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
+          "names": [
+            "www.zoneblick.com",
+            "zoneblick.com"
+          ],
+          "not_after_unix": 1802357127,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://zoneblick.com/",
           "address": "2606:50c0:8001::153",
           "result": "response",
           "status": 200,
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -405,11 +411,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 23
+        "ms": 14
       },
       "tls": {
         "result": "ok",
-        "ms": 22,
+        "ms": 16,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -429,7 +435,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -440,11 +447,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 22
+        "ms": 13
       },
       "tls": {
         "result": "ok",
-        "ms": 19,
+        "ms": 18,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -464,7 +471,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -475,7 +483,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 18
+        "ms": 13
       },
       "exchanges": [
         {
@@ -487,7 +495,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -497,7 +506,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -508,7 +518,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 19
+        "ms": 9
       },
       "exchanges": [
         {
@@ -520,7 +530,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -530,7 +541,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -541,7 +553,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 21
+        "ms": 20
       },
       "exchanges": [
         {
@@ -553,7 +565,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -563,7 +576,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -574,7 +588,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 19
+        "ms": 18
       },
       "exchanges": [
         {
@@ -586,7 +600,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -596,7 +611,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -607,7 +623,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 9
+        "ms": 12
       },
       "exchanges": [
         {
@@ -619,7 +635,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -629,7 +646,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -640,7 +658,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 8
+        "ms": 15
       },
       "exchanges": [
         {
@@ -652,7 +670,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -662,7 +681,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -673,7 +693,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 16
+        "ms": 13
       },
       "exchanges": [
         {
@@ -685,7 +705,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -695,7 +716,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     },
@@ -706,7 +728,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 14
+        "ms": 21
       },
       "exchanges": [
         {
@@ -718,7 +740,8 @@
           "body_bytes": 162,
           "body_truncated": false,
           "body_sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
-          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7"
+          "shape_sha256": "2e944453f813e281b1c11cd42db22a07acd5878ce153c4858fbd756975d63bc7",
+          "title": "301 Moved Permanently"
         },
         {
           "url": "https://zoneblick.com/",
@@ -728,7 +751,8 @@
           "body_bytes": 54395,
           "body_truncated": false,
           "body_sha256": "6b355dde0a8b5a1282739069dbffc94ae8c3dd517e48363d40a4658f77a0453b",
-          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba"
+          "shape_sha256": "a1952f6427fb5d55d90d46e3fdc4b02317c97d661f9aea83ff75058408fefaba",
+          "title": "zoneblick"
         }
       ]
     }

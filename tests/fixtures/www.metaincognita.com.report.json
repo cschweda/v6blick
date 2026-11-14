@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "host": "www.metaincognita.com.",
   "target": "www.metaincognita.com",
-  "started_at_unix": 1794677736,
+  "started_at_unix": 1794679205,
   "vantage": {
     "ipv4": true,
     "ipv6": true
@@ -266,11 +266,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 37
+        "ms": 33
       },
       "tls": {
         "result": "ok",
-        "ms": 42,
+        "ms": 54,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -301,7 +301,8 @@
           "body_bytes": 355436,
           "body_truncated": false,
           "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
-          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f",
+          "title": "Metaincognita Workshop"
         }
       ]
     },
@@ -316,7 +317,7 @@
       },
       "tls": {
         "result": "ok",
-        "ms": 60,
+        "ms": 61,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -347,7 +348,8 @@
           "body_bytes": 355436,
           "body_truncated": false,
           "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
-          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f",
+          "title": "Metaincognita Workshop"
         }
       ]
     },
@@ -358,11 +360,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 39
+        "ms": 34
       },
       "tls": {
         "result": "ok",
-        "ms": 42,
+        "ms": 60,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -400,11 +402,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 40
+        "ms": 35
       },
       "tls": {
         "result": "ok",
-        "ms": 43,
+        "ms": 57,
         "certificate": {
           "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
           "names": [
@@ -442,7 +444,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 34
+        "ms": 36
       },
       "exchanges": [
         {
@@ -475,7 +477,8 @@
           "body_bytes": 355436,
           "body_truncated": false,
           "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
-          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f",
+          "title": "Metaincognita Workshop"
         }
       ]
     },
@@ -486,7 +489,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 35
+        "ms": 31
       },
       "exchanges": [
         {
@@ -519,7 +522,8 @@
           "body_bytes": 355436,
           "body_truncated": false,
           "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
-          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f",
+          "title": "Metaincognita Workshop"
         }
       ]
     },
@@ -530,7 +534,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 39
+        "ms": 31
       },
       "exchanges": [
         {
@@ -570,7 +574,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 34
+        "ms": 32
       },
       "exchanges": [
         {

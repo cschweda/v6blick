@@ -61,6 +61,18 @@ pub(crate) fn printable(text: &str) -> String {
                 | '\u{2060}'..='\u{2069}'
                 | '\u{061c}'
                 | '\u{feff}'
+                // Added for v6blick: other characters that print as
+                // nothing or as a blank that is not a space.
+                | '\u{00ad}'
+                | '\u{034f}'
+                | '\u{115f}'..='\u{1160}'
+                | '\u{17b4}'..='\u{17b5}'
+                | '\u{180b}'..='\u{180f}'
+                | '\u{3164}'
+                | '\u{fe00}'..='\u{fe0f}'
+                | '\u{ffa0}'
+                | '\u{fff9}'..='\u{fffb}'
+                | '\u{e0000}'..='\u{e0fff}'
         );
         if c.is_control() {
             // DNS presentation style: backslash and three decimal digits.

@@ -28,6 +28,7 @@ v6blick tests a host or a whole page from three kinds of network: an ordinary du
 - [JSON output](#json-output)
 - [How it works](#how-it-works)
 - [Safety and politeness](#safety-and-politeness)
+- [Security audits](#security-audits)
 - [How it divides the work with zoneblick](#how-it-divides-the-work-with-zoneblick)
 - [Build phases](#build-phases)
 - [Development](#development)
@@ -163,8 +164,10 @@ v6blick check https://www.metaincognita.com/
 **3. "A pull request must not add something that breaks for IPv6-only visitors."** Run it in CI against the preview build. It exits `2` on a critical finding and `1` on warnings.
 
 ```yaml
-- run: v6blick check preview.example.org --json > v6blick.json
+- run: v6blick check --json -- "$PREVIEW_HOST" > v6blick.json
 ```
+
+Put `--` before a host that comes from somewhere you do not control, such as a pull request. Without it, a "host" of `--help` would print the help text and exit `0`.
 
 **4. "We want to stop paying for IPv4 addresses. What would break?"** The `v6only` mode is the true dependency list: every host the page needs that has no working IPv6 address, grouped by who serves it.
 
@@ -311,7 +314,7 @@ EQV-02 looks at the first response and at where the redirects end, so it also fi
 | `0` | Clean: no findings above `info` |
 | `1` | Notices or warnings, nothing critical |
 | `2` | At least one critical finding |
-| `3` | The run itself failed: a bad command line, a name that does not exist, or no working IPv6 on this machine |
+| `3` | The run itself failed: a bad command line, a name that does not exist, no working IPv6 on this machine, a site that answers on neither family, or a run that did not finish in two minutes |
 
 These are zoneblick's exit codes. A bad command line exits `3`, not `2`.
 
@@ -373,8 +376,8 @@ These are zoneblick's exit codes. A bad command line exits `3`, not `2`.
 | `started_at_unix` | When the run started. The only field that depends on the time of the run, apart from the measured milliseconds |
 | `vantage` | Which address families work from the machine that ran the check. Both are `true` in every report, since a run without either fails |
 | `lookup` | The A and AAAA records after following aliases. `source` is `root`, or `system` for a name the public DNS does not know (only with `--allow-private`). Each family's `status` is `answer`, `nodata`, `nxdomain` or `failed` |
-| `ipv6_walks` | One walk from the root for the host and, when it is an alias, one for the name its addresses belong to. `path` lists the referrals; `failed_at`, when present, names the zone no nameserver of which answers over IPv6 |
-| `probes` | One entry per address and port. `connect.result` is `connected`, `refused`, `timed_out`, `failed` or `not_probed`. `tls` is present for HTTPS. `exchanges` holds the request to the address and then each redirect that was followed |
+| `ipv6_walks` | One walk from the root for the host and, when it is an alias, one for the name its addresses belong to. `path` lists the referrals; `failed_at`, when present, names the zone no nameserver of which answers over IPv6; `unfinished`, when present, says the walk was cut short by v6blick's own limit on DNS queries |
+| `probes` | One entry per address and port. `connect.result` is `connected`, `refused`, `timed_out`, `failed` or `not_probed`. `tls` is present for HTTPS. `exchanges` holds the request to the address and then each redirect that was followed. A response has its `status`, `location`, the size and two hashes of its body, and the page's `title` when it has one; a failed exchange has a `stage` (`resolve`, `refused`, `connect`, `tls`, `http` or `deadline`) and a `message` |
 | `findings` | Most severe first. `evidence.kind` names the shape of the evidence: `no_aaaa`, `unusable_aaaa`, `ipv6_walk_failed`, `no_connection`, `tls_failure`, `slower_connect`, `fallback_wait`, `certificate_mismatch`, `response_mismatch` or `body_mismatch` |
 | `summary`, `exit_code` | Findings per severity, and the code the process exits with |
 
@@ -394,7 +397,7 @@ A run that fails prints a short document instead, also on stdout, and exits `3`:
 }
 ```
 
-`error.kind` is one of `invalid_target`, `no_network`, `no_ipv6`, `no_ipv4`, `host_not_found`, `no_addresses`, `lookup_failed` or `tls_setup`.
+`error.kind` is one of `invalid_target`, `no_network`, `no_ipv6`, `no_ipv4`, `host_not_found`, `no_addresses`, `lookup_failed`, `unreachable` (nothing accepts a connection over either family), `not_contacted` (every address is one v6blick does not contact, for example a private one without `--allow-private`), `deadline` or `tls_setup`.
 
 ## How it works
 
@@ -459,9 +462,9 @@ One Cargo package. All network I/O is in `resolve` and `probe`; `checks` has non
 ## Safety and politeness
 
 - **Working IPv6 is required on the test machine.** `v6blick doctor` checks it. Without it the IPv6 half of every comparison cannot run; the tool says so and exits `3` instead of reporting false failures.
-- **Private addresses are refused.** Private, loopback and link-local destinations are not contacted unless `--allow-private` is given.
+- **Private addresses are refused.** Private, loopback and link-local destinations are not contacted unless `--allow-private` is given. The rule is the same for the web servers that are probed, for the target of every redirect, and for the nameservers a zone names: a zone cannot get v6blick to send DNS queries into your network either. Addresses that are neither public nor local (unspecified, multicast, documentation, IPv4 written as IPv6, NAT64 and the retired transition ranges) are refused always.
 - **It connects only to what was asked for.** The given host, the hosts its redirects name and, for a page, the resources the page loads. No crawling.
-- **Polite.** At most four probes and sixteen DNS queries in flight, a timeout on every network step (5 s to connect, 5 s for TLS, 10 s for a response), at most five DNS queries a second to one server, at most one retry of a DNS query and none of a probe, and at most 600 DNS queries in a run.
+- **Polite.** At most four probes and sixteen DNS queries in flight, a timeout on every network step (5 s to connect, 5 s for TLS, 10 s for a response), at most five DNS queries a second to one server, at most one retry of a DNS query and none of a probe, and at most 600 DNS queries in a run. One probe with all its redirects has 30 seconds, and the whole run has two minutes; a run that is stopped reports nothing.
 - **Plain requests only.** One `GET` per probe, with the `User-Agent` `v6blick/<version> (+https://github.com/cschweda/v6blick)`. At most five redirects are followed, each one is recorded, and at most 1 MiB of a body is read.
 - **What comes from the network is treated as hostile.** Record data, header values and error texts are stripped of control characters before they are printed, and a redirect cannot lead to a private address.
 - **The proxy is local and short-lived** (Phase 1). It binds to `127.0.0.1` on a random port for the length of the run and is not usable as a general proxy.
@@ -513,12 +516,93 @@ cargo test --test check record_fixtures -- --ignored       # record the fixtures
 | `DECISIONS.md` | Choices made during implementation, one line each, and what was copied from zoneblick |
 | `KICKOFF.md` | The prompt that started Phase 0 |
 | `src/` | The code; see [Source layout](#source-layout) |
-| `tests/` | Offline tests: `resolver.rs`, `probe.rs`, `check.rs` (a whole run), `cli.rs` (the binary); `common/` holds the DNS worlds and the local test server |
+| `tests/` | Offline tests: `resolver.rs`, `probe.rs`, `check.rs` (a whole run), `cli.rs` (the binary), and `redteam_*.rs` (the attacks of the security audit, kept as regression tests); `common/` holds the DNS worlds and the local test server |
 | `tests/fixtures/` | Three recorded runs as `--json` documents, and two self-signed test certificates |
 | `screenshots/` | The terminal screenshots in this README |
 | `docs/` | The project site, served by GitHub Pages: one static page, the social card (`og-image.png`, 1200x630), screenshots, icons, `robots.txt` and `llms.txt` |
 | `packaging/og-image.html` | Source of the social card, with the command that renders it |
 | `LICENSE-MIT`, `LICENSE-APACHE` | The two licences |
+
+## Security audits
+
+This section is the record of every security audit of v6blick, newest first; older audits will be kept here in short form. They are reviews by the project itself, not third-party audits. Each has a red team (an independent reviewer reading the code as an attacker, plus hands-on attacks on the parsers and on running instances) and a blue team (the fixes, each with a regression test).
+
+| Audit | Version audited | Date | Found | Fixed in |
+|---|---|---|---|---|
+| [1](#audit-1-version-010) | 0.1.0 (commit `595371b`) | 2026-11-14 | 0 critical, 0 high, 5 medium, 12 low | the commit after it; 2 low items left open |
+| [Commit reviews](#automated-review-of-each-commit) | every commit | continuous | 1 medium | the next commit |
+
+**Who the attackers are**
+
+| Attacker | Controls | Wants |
+|---|---|---|
+| A hostile web server that v6blick is pointed at, or that a redirect leads to | The TCP connection, the TLS handshake and certificate, every byte and the timing of the HTTP response | To crash or stall the tool, make it connect somewhere inside the user's network, inject into its output, or hide a difference |
+| A hostile DNS zone: the host's own, or one an alias or a nameserver name points into | DNS answers, glue, alias chains, how long answers take | The same, or to have DNS queries sent to internal hosts |
+| A hostile argument, for example a host name from a pull request | The `<host-or-url>` value | To forge lines in a CI log, or to turn the check green |
+| Whoever reads the output | Nothing; they are the one deceived | |
+
+### Open now
+
+Known, and not fixed.
+
+- **Certificates are not validated against an authority.** v6blick compares what the two families present and records whether a name on the certificate matches the host. A certificate no browser trusts is not reported unless it differs between the families.
+- **A server can answer v6blick differently from a browser.** The `User-Agent` names v6blick, on purpose. A server that treats it differently gets a report about what it sent to v6blick.
+- **One broken IPv6 address among several can hide.** A difference is reported only when no IPv6 address agrees with any IPv4 address, so that servers in the middle of a renewal do not raise alarms. An address that does not answer at all is still reported (RCH-01), one that answers differently while its neighbours agree is not.
+- **Redirects may name any public host.** A hostile site can make one run send up to five requests per probe, so up to 80 plain `GET`s, to hosts of its choosing. They are ordinary requests, rate-limited by the four-at-a-time rule and the two-minute deadline.
+- **A backslash from a server is printed as it is.** Control characters are shown as a backslash and three digits, so a server that sends the text `\027` produces output that looks like an escaped control character. It misleads nobody's terminal, only a careful reader. (Audit 1, low.)
+- **`v6blick check --help` exits `0`.** In CI, pass an untrusted host after `--`, as shown in [Who it is for](#who-it-is-for). (Audit 1, low.)
+- **Not attacked yet:** the live DNS path under load (retries, the rate limiter, spoofed answers from off the path), a TLS server that stalls after the handshake, and the DNS and TLS libraries themselves, which were fuzzed through v6blick and not reviewed. Dependencies had no known advisory on 2026-11-14 (`cargo audit`, 121 crates).
+
+### Audit 1: version 0.1.0
+
+Audited on 2026-11-14, the day Phase 0 was finished, at commit `595371b`. All fixes are in the commit that follows it, each with a test in `tests/redteam_*.rs` or beside the code.
+
+**What the red team did**
+
+- Read all of the code as an attacker.
+- Fuzzed the address parser and redirect resolution with 400,000 inputs, checking the bytes of every request that would be sent; the response reader with 150,000 mutated responses; the page-structure reader with 200,000 inputs and nine 1 MiB bodies built to be slow; the certificate reader with 400,000 mutated and random certificates.
+- Replayed 4,000 mutated DNS answer sets through the resolver, and built hostile DNS worlds by hand: alias loops, a chain of 30 aliases, zones whose nameservers are in each other, 50 nameserver names that do not resolve, referrals that point up or sideways, and glue in private ranges.
+- Ran hostile web servers: endless headers, endless interim responses, endless chunk sizes, bodies that trickle, lengths near the largest number, and silence; 24 kinds of redirect aimed at this machine's own services without `--allow-private`, and 6 with it.
+- Ran whole checks with escape sequences, direction overrides, line breaks and CI commands in `Location` headers, status lines, DNS names and the command-line argument.
+
+**What broke, and the fix**
+
+| Severity | Finding | Fix |
+|---|---|---|
+| Medium | **DNS queries went to private addresses.** A zone could name a nameserver at `10.0.0.53`, and v6blick asked it, without `--allow-private`. The error text then showed in a CI log whether something listens on port 53 there. The rule had been copied from zoneblick, where private nameservers are a normal thing to watch. | One address rule for web servers, redirects and nameservers: only public addresses, and local ones only with `--allow-private`. |
+| Medium | **No deadline for a probe or a run.** A server that answered each request just inside its timeout could hold one host's check for about six minutes, and a slow zone could hold the DNS side far longer. | One probe with its redirects has 30 seconds; the whole run has two minutes and then stops with exit code `3`. |
+| Medium | **A different page with the same tags was not seen.** EQV-03 compared the sequence of HTML tags and the size. Two JSON answers of equal length, "ok" over IPv4 and "error" over IPv6, counted as the same page, and so did another site built from the same few tags. | A body without tags must be the same bytes. A page must also have the same title. |
+| Medium | **A relative redirect with an address in its query was refused**, as in `/login?next=https://...`, an ordinary login redirect. The chain ended there on both families, so the pages behind it were never compared. | A scheme is looked for only before the first `/`, `?` or `#`. |
+| Medium | **The argument was printed as typed.** A host argument from a pull request could carry control characters and direction overrides in its path into the first line of the report. | The argument is made safe to print, as everything from the network already was. |
+| Low | The redirect that was followed was the escaped copy of `Location`, not what the server sent, so addresses with a zero-width joiner (as in Persian and Indic text) were requested wrongly. | The header is followed as sent; only the stored copy is escaped. |
+| Low | With `--allow-private`, this machine's resolver was asked after any failed lookup, not only "no such name". A zone that failed to answer got the name looked up elsewhere, with the IPv6-only walk skipped. | Only a definite "no such name" from the public DNS falls back. |
+| Low | A body cut short by the server was recorded as complete, with its size and hash. | It is a failed response. |
+| Low | A chunked body in more than about 8,000 chunks failed. | Each chunk-size line has its own limit. |
+| Low | Odd addresses were accepted: two ports, text after an IPv6 bracket, an IPv6 address without brackets, an empty label. None got past the address rule. | All refused. |
+| Low | Some special ranges counted as public, so ADR-02 missed them: the local NAT64 prefix, the second documentation prefix, benchmarking ranges, and everything outside `2000::/3`. | Added; for IPv6, only `2000::/3` minus its special blocks is public. |
+| Low | Some invisible characters from a server were printed: soft hyphen, fillers, variation selectors, tag characters. | Escaped. A backslash is still printed as it is; see [Open now](#open-now). |
+| Low | One `Location` of 60 kB made one output line of 60,000 characters; a 300 kB argument was echoed whole. | Addresses over 2,048 characters are not followed, printed values stop at 1,024, and an argument that long is refused without being quoted. |
+| Low | When the 600-query limit was reached, the IPv6-only walk failed and ADR-03 blamed the zone. | Such a walk is marked unfinished and no check judges it. |
+| Low | `v6blick check --help` exits `0`, so an untrusted "host" of `--help` turns a CI step green. | Documented: pass `--` first. See [Open now](#open-now). |
+| Low, found by the blue team | A site that was down on both families was reported as a critical IPv6 fault (RCH-01), and so was a host whose addresses were never contacted. | Such a run fails with exit code `3` and says why. RCH-01 needs IPv4 to work when IPv4 was tried. |
+| Low, found by the blue team | An evidence line could begin with an address such as `::1`, which a CI runner may read as the start of a command. | No line begins with an address. |
+
+**What held**
+
+- **The address rule of the prober.** From a server on a public address, 24 kinds of redirect reached nothing on this machine: literal, IPv4-in-IPv6, decimal and hex forms, `localhost` in several spellings, names that resolve to loopback, link-local and private addresses, and the cloud metadata address. The address that is checked is the address that is connected to.
+- **The request.** No accepted address or `Location` put a control byte, a space, a line break or an extra header into a request. Nothing but a plain `GET` was ever sent.
+- **One request is bounded.** Every endless or oversized response ended at the timeout and the size limit.
+- **No crash.** No panic and no arithmetic overflow in any fuzz run.
+- **Output.** Escape sequences, direction overrides, line breaks and bytes that are not UTF-8 from a server or from DNS did not reach the text output, and the JSON always parsed.
+- **The resolver.** Loops, long alias chains and zones that depend on each other all ended in under 100 queries.
+
+### Automated review of each commit
+
+Every commit is read by an automated security reviewer before work goes on.
+
+| Severity | Finding | Fix |
+|---|---|---|
+| Medium | In the resolver copied from zoneblick, a zone whose nameservers have no addresses could make v6blick resolve several nameserver names at every level, each of which could do the same. | At most 600 DNS queries in a run, and only the first level tries more than one nameserver name. |
 
 ## Responsible use
 

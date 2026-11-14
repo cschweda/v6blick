@@ -19,6 +19,10 @@ v6blick tests a host or a whole page from three kinds of network: `dual` (an ord
 - LIT-01 to LIT-02: literal IPv4 addresses in a page (planned, needs a browser)
 - MTU-01: large responses that stall over IPv6 only (planned)
 
+## Security
+
+One red team and blue team audit so far, of version 0.1.0 on 2026-11-14: no critical or high finding, five medium and twelve low; all fixed except two low items, which are documented. The record is in the README under "Security audits".
+
 ## Links
 
 - [Source](https://github.com/cschweda/v6blick)

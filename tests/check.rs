@@ -203,6 +203,48 @@ async fn without_ipv6_on_this_machine_nothing_is_tested() {
 }
 
 #[tokio::test]
+async fn a_site_that_answers_on_neither_family_is_a_failed_run_not_a_finding() {
+    // Both listeners are closed.
+    let port = serve(|_| (None, None)).await;
+    let (target, outcome) = check_local("http", port).await;
+    assert!(
+        matches!(outcome, Err(RunError::Unreachable { .. })),
+        "{outcome:?}"
+    );
+    let out = report(&target, outcome, false, false);
+    assert_eq!(out.exit_code, exit::RUN_FAILED);
+    assert!(
+        out.stderr
+            .contains("nothing accepts a connection at localhost.")
+    );
+    assert!(!out.stderr.contains("RCH-01"));
+}
+
+#[tokio::test]
+async fn a_local_address_without_the_flag_is_a_failed_run_that_names_the_flag() {
+    // The DNS world gives `inside.example.` a private address.
+    use v6blick::observe::QType;
+    let mut world = World::new();
+    let glue = [("ns1.inside.example.", "192.0.2.53")];
+    for (qtype, ip) in [(QType::A, "10.1.2.3"), (QType::Aaaa, "fd00::10")] {
+        world.delegate("www.inside.example.", qtype, "inside.example.", &glue);
+        world.answer(
+            "192.0.2.53",
+            "www.inside.example.",
+            qtype,
+            &[common::addr("www.inside.example.", ip)],
+        );
+    }
+    let outcome = observe("www.inside.example", world.client(), ProbeConfig::default()).await;
+    match &outcome {
+        Err(RunError::NotContacted { reason, .. }) => {
+            assert!(reason.contains("--allow-private"), "{reason}")
+        }
+        other => panic!("{other:?}"),
+    }
+}
+
+#[tokio::test]
 async fn without_any_network_the_run_fails() {
     let outcome = observe("example.org", World::default().client(), local()).await;
     assert!(matches!(outcome, Err(RunError::NoNetwork)));

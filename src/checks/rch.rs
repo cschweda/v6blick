@@ -14,6 +14,14 @@ pub fn check(obs: &Observation, thresholds: &Thresholds) -> Vec<Finding> {
         by_address.entry(probe.address).or_default().push(probe);
     }
 
+    // When IPv4 was tried and nothing opened there either, the site is
+    // down, or this machine cannot reach it. That is not an IPv6 fault.
+    let v4_tried = v4
+        .iter()
+        .any(|p| !matches!(p.connect, Connect::NotProbed { .. }));
+    let v4_opens = v4.iter().any(|p| p.connect.connected_ms().is_some());
+    let down_everywhere = v4_tried && !v4_opens;
+
     for (address, probes) in &by_address {
         // RCH-01: a published address where no port accepts a connection.
         // An address that was not contacted says nothing either way.
@@ -21,7 +29,7 @@ pub fn check(obs: &Observation, thresholds: &Thresholds) -> Vec<Finding> {
             .iter()
             .filter(|p| !matches!(p.connect, Connect::NotProbed { .. }))
             .collect();
-        if !tried.is_empty() && tried.iter().all(|p| p.connect.is_failure()) {
+        if !down_everywhere && !tried.is_empty() && tried.iter().all(|p| p.connect.is_failure()) {
             findings.push(Finding::new(
                 "RCH-01",
                 Severity::Critical,
@@ -191,6 +199,20 @@ mod tests {
     }
 
     #[test]
+    fn a_site_that_is_down_over_ipv4_too_is_not_an_ipv6_fault() {
+        let mut obs = healthy();
+        for address in [V4, V6] {
+            for scheme in [Scheme::Https, Scheme::Http] {
+                *at(&mut obs, address, scheme) = dead(address, scheme, Connect::Refused { ms: 1 });
+            }
+        }
+        assert!(run(&obs).is_empty());
+        // A host with IPv6 addresses only has no IPv4 to excuse it.
+        obs.probes.retain(|p| p.family == Family::Ipv6);
+        assert_eq!(ids(&run(&obs)), ["RCH-01"]);
+    }
+
+    #[test]
     fn each_dead_address_is_its_own_finding() {
         let mut obs = healthy();
         let other = "2001:db8::11";
@@ -278,10 +300,11 @@ mod tests {
             }
         ));
 
-        // With nothing to fall back to there is no fallback to wait for.
+        // With nothing to fall back to there is no fallback to wait for,
+        // and a site that is down over IPv4 too is not an IPv6 fault.
         for scheme in [Scheme::Https, Scheme::Http] {
             *at(&mut obs, V4, scheme) = dead(V4, scheme, Connect::Refused { ms: 4 });
         }
-        assert_eq!(ids(&run(&obs)), ["RCH-01"]);
+        assert!(run(&obs).is_empty());
     }
 }

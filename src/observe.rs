@@ -175,6 +175,11 @@ pub struct Ipv6Walk {
     /// nameservers answered over IPv6.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failed_at: Option<WalkFailure>,
+    /// Set when the walk was cut short by v6blick's own limit on DNS
+    /// queries. Nothing is known about the zone then, and no check
+    /// judges it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unfinished: Option<String>,
 }
 
 /// `http` or `https`.
@@ -313,6 +318,9 @@ pub struct Response {
     /// names, without text or attributes. Two loads of a dynamic page
     /// usually share it.
     pub shape_sha256: String,
+    /// The page's title, when it has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 /// What one HTTP request led to.
@@ -321,7 +329,7 @@ pub struct Response {
 pub enum ExchangeOutcome {
     Response(Response),
     /// The request got no response. `stage` is `resolve`, `refused`,
-    /// `connect`, `tls` or `http`.
+    /// `connect`, `tls`, `http` or `deadline`.
     Failed {
         stage: String,
         message: String,
@@ -468,7 +476,11 @@ pub fn special_use(address: IpAddr) -> Option<SpecialUse> {
                 Some(SpecialUse::Multicast)
             } else if a.is_documentation() {
                 Some(SpecialUse::Documentation)
-            } else if o[0] >= 240 || (o[0] == 198 && o[1] & 0xfe == 18) {
+            } else if o[..3] == [192, 88, 99] {
+                // The 6to4 relay anycast prefix, retired.
+                Some(SpecialUse::RetiredTransition)
+            } else if o[0] >= 240 || (o[0] == 198 && o[1] & 0xfe == 18) || o[..3] == [192, 0, 0] {
+                // Class E, benchmarking, and the IETF protocol block.
                 Some(SpecialUse::Reserved)
             } else {
                 None
@@ -493,7 +505,8 @@ pub fn special_use(address: IpAddr) -> Option<SpecialUse> {
                 Some(SpecialUse::Multicast)
             } else if s[0] == 0x2001 && s[1] == 0x0db8 {
                 Some(SpecialUse::Documentation)
-            } else if s[0] == 0x0064 && s[1] == 0xff9b && s[2..6] == [0; 4] {
+            } else if s[0] == 0x0064 && s[1] == 0xff9b && (s[2..6] == [0; 4] || s[2] == 1) {
+                // 64:ff9b::/96, and 64:ff9b:1::/48 for local use.
                 Some(SpecialUse::Nat64)
             } else if s[0] == 0x2002
                 || (s[0] == 0x2001 && s[1] == 0)
@@ -502,8 +515,16 @@ pub fn special_use(address: IpAddr) -> Option<SpecialUse> {
             {
                 // 6to4, Teredo, the 6bone, site-local.
                 Some(SpecialUse::RetiredTransition)
-            } else if s[0] == 0x0100 && s[1..4] == [0; 3] {
-                // 100::/64, the discard prefix.
+            } else if s[0] == 0x3fff && s[1] & 0xf000 == 0 {
+                // 3fff::/20, the second documentation prefix.
+                Some(SpecialUse::Documentation)
+            } else if s[0] & 0xe000 != 0x2000
+                || (s[0] == 0x2001 && (s[1] == 2 && s[2] == 0 || s[1] & 0xfff0 == 0x20))
+            {
+                // Everything outside 2000::/3 is not a public unicast
+                // address: the discard prefix, segment routing, and
+                // space nobody has been given. Inside it, benchmarking
+                // (2001:2::/48) and ORCHIDv2 (2001:20::/28).
                 Some(SpecialUse::Reserved)
             } else {
                 None
@@ -579,6 +600,16 @@ mod tests {
         assert_eq!(kind("2001:0:53aa::1"), Some(SpecialUse::RetiredTransition));
         assert_eq!(kind("fec0::1"), Some(SpecialUse::RetiredTransition));
         assert_eq!(kind("2606:4700::6810:84e5"), None);
+        assert_eq!(kind("192.0.0.8"), Some(SpecialUse::Reserved));
+        assert_eq!(kind("192.88.99.1"), Some(SpecialUse::RetiredTransition));
+        assert_eq!(kind("64:ff9b:1::a00:1"), Some(SpecialUse::Nat64));
+        assert_eq!(kind("3fff::1"), Some(SpecialUse::Documentation));
+        assert_eq!(kind("2001:2::1"), Some(SpecialUse::Reserved));
+        assert_eq!(kind("2001:20::1"), Some(SpecialUse::Reserved));
+        assert_eq!(kind("100::1"), Some(SpecialUse::Reserved));
+        assert_eq!(kind("5f00::1"), Some(SpecialUse::Reserved));
+        assert_eq!(kind("4000::1"), Some(SpecialUse::Reserved));
+        assert_eq!(kind("2a00:1450:4001::1"), None);
     }
 
     #[test]

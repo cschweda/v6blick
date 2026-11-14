@@ -39,6 +39,12 @@ pub struct ProbeConfig {
     pub tls_timeout: Duration,
     /// For sending the request and reading the whole response.
     pub http_timeout: Duration,
+    /// For one probe from its first connection to its last redirect. A
+    /// server that answers each request just inside the timeouts above
+    /// could otherwise hold a probe for the sum of them all.
+    pub probe_deadline: Duration,
+    /// For the whole run: DNS, the IPv6-only walks and every probe.
+    pub run_deadline: Duration,
     /// Redirects followed from one address.
     pub max_redirects: usize,
     /// Bytes of a body that are read and hashed.
@@ -58,6 +64,8 @@ impl Default for ProbeConfig {
             connect_timeout: Duration::from_secs(5),
             tls_timeout: Duration::from_secs(5),
             http_timeout: Duration::from_secs(10),
+            probe_deadline: Duration::from_secs(30),
+            run_deadline: Duration::from_secs(120),
             max_redirects: 5,
             body_limit: 1024 * 1024,
             max_addresses: 4,
@@ -86,6 +94,13 @@ pub trait Resolve: Send + Sync {
 /// in place of a name is refused, because there is nothing to compare.
 pub fn targets(input: &str) -> Result<Vec<Url>, String> {
     let input = input.trim();
+    if input.len() > http::MAX_URL {
+        // Not quoted: it would fill the screen.
+        return Err(format!(
+            "what was given is longer than {} characters",
+            http::MAX_URL
+        ));
+    }
     let urls = if input.contains("://") {
         vec![Url::parse(input)?]
     } else {
@@ -157,6 +172,23 @@ struct Attempt {
     connect: Connect,
     tls: Option<Tls>,
     outcome: ExchangeOutcome,
+    /// The `Location` header as the server sent it. What is stored in
+    /// the outcome is made safe to print, and must not be what is
+    /// followed.
+    location: Option<String>,
+}
+
+/// At most this much of a header value is kept for printing.
+const MAX_SHOWN: usize = 1024;
+
+/// Text from the network, safe to print and of bounded length.
+fn shown(text: &str) -> String {
+    let safe = printable(text);
+    if safe.chars().count() <= MAX_SHOWN {
+        return safe;
+    }
+    let kept: String = safe.chars().take(MAX_SHOWN).collect();
+    format!("{kept}... ({} characters in all)", safe.chars().count())
 }
 
 fn failed(stage: &str, message: impl Into<String>) -> ExchangeOutcome {
@@ -181,6 +213,7 @@ async fn attempt(
             outcome: failed("refused", reason.clone()),
             connect: Connect::NotProbed { reason },
             tls: None,
+            location: None,
         };
     }
     let started = Instant::now();
@@ -201,6 +234,7 @@ async fn attempt(
                     outcome: failed("connect", connect.label()),
                     connect,
                     tls: None,
+                    location: None,
                 };
             }
             Err(_) => {
@@ -209,6 +243,7 @@ async fn attempt(
                     outcome: failed("connect", connect.label()),
                     connect,
                     tls: None,
+                    location: None,
                 };
             }
         };
@@ -218,10 +253,12 @@ async fn attempt(
     match url.scheme {
         Scheme::Http => {
             let mut stream = stream;
+            let (outcome, location) = exchange(&mut stream, url, config).await;
             Attempt {
-                outcome: exchange(&mut stream, url, config).await,
+                outcome,
                 connect,
                 tls: None,
+                location,
             }
         }
         Scheme::Https => {
@@ -231,6 +268,7 @@ async fn attempt(
                     outcome: failed("tls", message.clone()),
                     connect,
                     tls: Some(Tls::Failed { message }),
+                    location: None,
                 };
             };
             let handshake = Instant::now();
@@ -240,11 +278,12 @@ async fn attempt(
             let mut stream = match result {
                 Ok(Ok(stream)) => stream,
                 Ok(Err(e)) => {
-                    let message = printable(&e.to_string());
+                    let message = shown(&e.to_string());
                     return Attempt {
                         outcome: failed("tls", message.clone()),
                         connect,
                         tls: Some(Tls::Failed { message }),
+                        location: None,
                     };
                 }
                 Err(_) => {
@@ -256,6 +295,7 @@ async fn attempt(
                         outcome: failed("tls", message.clone()),
                         connect,
                         tls: Some(Tls::Failed { message }),
+                        location: None,
                     };
                 }
             };
@@ -271,27 +311,32 @@ async fn attempt(
                     outcome: failed("tls", message.clone()),
                     connect,
                     tls: Some(Tls::Failed { message }),
+                    location: None,
                 };
             };
             let tls = Tls::Ok {
                 ms: ms(handshake),
                 certificate,
             };
+            let (outcome, location) = exchange(&mut stream, url, config).await;
             Attempt {
-                outcome: exchange(&mut stream, url, config).await,
+                outcome,
                 connect,
                 tls: Some(tls),
+                location,
             }
         }
     }
 }
 
-/// Send the GET and read the response, within the time allowed.
+/// Send the GET and read the response, within the time allowed. With
+/// the outcome comes the `Location` of a response that asks to be
+/// followed, as it was sent.
 async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     stream: &mut S,
     url: &Url,
     config: &ProbeConfig,
-) -> ExchangeOutcome {
+) -> (ExchangeOutcome, Option<String>) {
     let work = async {
         stream
             .write_all(&url.request(&config.user_agent))
@@ -301,14 +346,22 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
         http::read_response(stream, config.body_limit).await
     };
     match tokio::time::timeout(config.http_timeout, work).await {
-        Ok(Ok(raw)) => ExchangeOutcome::Response(summarise(&raw)),
-        Ok(Err(message)) => failed("http", printable(&message)),
-        Err(_) => failed(
-            "http",
-            format!(
-                "no complete response in {} s",
-                config.http_timeout.as_secs()
+        Ok(Ok(raw)) => {
+            let follow = matches!(raw.status, 301 | 302 | 303 | 307 | 308)
+                .then(|| raw.header("location").map(str::to_string))
+                .flatten();
+            (ExchangeOutcome::Response(summarise(&raw)), follow)
+        }
+        Ok(Err(message)) => (failed("http", shown(&message)), None),
+        Err(_) => (
+            failed(
+                "http",
+                format!(
+                    "no complete response in {} s",
+                    config.http_timeout.as_secs()
+                ),
             ),
+            None,
         ),
     }
 }
@@ -316,21 +369,12 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
 fn summarise(raw: &RawResponse) -> Response {
     Response {
         status: raw.status,
-        location: raw.header("location").map(printable),
+        location: raw.header("location").map(shown),
         body_bytes: raw.body.len() as u64,
         body_truncated: raw.truncated,
         body_sha256: cert::sha256_hex(&raw.body),
         shape_sha256: cert::sha256_hex(&http::shape(&raw.body)),
-    }
-}
-
-/// The `Location` of a response that asks to be followed.
-fn redirect_of(outcome: &ExchangeOutcome) -> Option<&str> {
-    match outcome {
-        ExchangeOutcome::Response(r) if matches!(r.status, 301 | 302 | 303 | 307 | 308) => {
-            r.location.as_deref()
-        }
-        _ => None,
+        title: http::title(&raw.body).map(|t| shown(&t)),
     }
 }
 
@@ -344,6 +388,7 @@ pub async fn probe_address(
     tls_config: &Arc<rustls::ClientConfig>,
 ) -> AddressProbe {
     let family = Family::of(&address);
+    let started = Instant::now();
     let first = attempt(url, address, config, tls_config).await;
     let mut probe = AddressProbe {
         family,
@@ -370,17 +415,17 @@ pub async fn probe_address(
     });
 
     let mut current = url.clone();
+    let mut location = first.location;
     let mut seen = vec![url.to_string()];
     for _ in 0..config.max_redirects {
-        let last = &probe.exchanges.last().expect("at least one").outcome;
-        let Some(location) = redirect_of(last) else {
+        let Some(sent) = location.take() else {
             break;
         };
-        let next = match current.join(location) {
+        let next = match current.join(&sent) {
             Ok(next) => next,
             Err(why) => {
                 probe.exchanges.push(Exchange {
-                    url: location.to_string(),
+                    url: shown(&sent),
                     address: None,
                     outcome: failed("http", format!("the redirect cannot be followed: {why}")),
                 });
@@ -417,7 +462,7 @@ pub async fn probe_address(
                     .into_iter()
                     .find(|a| Family::of(a) == family)
                     .ok_or_else(|| format!("{} has no {} address", next.host, family.as_str())),
-                Err(why) => Err(format!("{} cannot be resolved: {why}", next.host)),
+                Err(why) => Err(format!("{} cannot be resolved: {}", next.host, shown(&why))),
             }
         };
         let to = match found {
@@ -431,7 +476,25 @@ pub async fn probe_address(
                 break;
             }
         };
-        let hop = attempt(&next, to, config, tls_config).await;
+        // What is left of the time this probe may take.
+        let left = config.probe_deadline.saturating_sub(started.elapsed());
+        let hop = match tokio::time::timeout(left, attempt(&next, to, config, tls_config)).await {
+            Ok(hop) => hop,
+            Err(_) => {
+                probe.exchanges.push(Exchange {
+                    url: next.to_string(),
+                    address: Some(to),
+                    outcome: failed(
+                        "deadline",
+                        format!(
+                            "the probe and its redirects did not finish in {} s",
+                            config.probe_deadline.as_secs()
+                        ),
+                    ),
+                });
+                break;
+            }
+        };
         let ended = matches!(hop.outcome, ExchangeOutcome::Failed { .. });
         probe.exchanges.push(Exchange {
             url: next.to_string(),
@@ -441,6 +504,7 @@ pub async fn probe_address(
         if ended {
             break;
         }
+        location = hop.location;
         current = next;
     }
     probe

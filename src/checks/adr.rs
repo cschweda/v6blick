@@ -160,6 +160,13 @@ mod tests {
     }
 
     #[test]
+    fn a_walk_that_ran_out_of_queries_is_not_a_finding() {
+        let mut obs = public();
+        obs.ipv6_walks[0].unfinished = Some("this run used up its DNS queries".to_string());
+        assert!(check(&obs).is_empty());
+    }
+
+    #[test]
     fn a_zone_without_ipv6_nameservers_is_adr_03() {
         let mut obs = public();
         let failed = |name: &str| Ipv6Walk {
@@ -169,6 +176,7 @@ mod tests {
                 zone: "example.org.".to_string(),
                 detail: "none of its nameservers has an IPv6 address".to_string(),
             }),
+            unfinished: None,
         };
         obs.ipv6_walks = vec![failed("www.example.org."), failed("edge.example.org.")];
         let findings = check(&obs);

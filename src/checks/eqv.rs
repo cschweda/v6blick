@@ -82,17 +82,27 @@ fn body_of(probe: &AddressProbe) -> Option<(ServedBody, &Response)> {
             truncated: response.body_truncated,
             body_sha256: response.body_sha256.clone(),
             shape_sha256: response.shape_sha256.clone(),
+            title: response.title.clone(),
         },
         response,
     ))
 }
 
-/// Two bodies agree when they have the same structure and about the same
-/// size. Pages with per-request content differ in their bytes on every
-/// load; they keep their structure.
+/// The structure hash of a body that has no HTML tag in it: SHA-256 of
+/// nothing.
+const NO_TAGS: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+/// Two bodies agree when they have the same structure, the same title
+/// and about the same size. Pages with per-request content differ in
+/// their bytes on every load; they keep their structure and their title.
+/// A body with no tags (JSON, plain text) has no structure to compare,
+/// so it must be the same bytes.
 fn same_body(a: &ServedBody, b: &ServedBody, thresholds: &Thresholds) -> bool {
     if a.body_sha256 == b.body_sha256 {
         return true;
+    }
+    if a.shape_sha256 == NO_TAGS || a.title != b.title {
+        return false;
     }
     let (small, large) = (a.bytes.min(b.bytes), a.bytes.max(b.bytes));
     let gap = large - small;
@@ -466,6 +476,25 @@ mod tests {
             response(200, None, &format!("page {}", "x".repeat(200))),
         );
         assert!(run(&obs).is_empty());
+    }
+
+    #[test]
+    fn another_title_or_other_bytes_without_tags_is_eqv_03() {
+        // The same tags and size under another title: another page.
+        let mut obs = healthy();
+        let mut other = response(200, None, "page two");
+        other.title = Some("Site suspended".to_string());
+        set_first(&mut obs, V6, Scheme::Https, other);
+        assert_eq!(ids(&run(&obs)), ["EQV-03"]);
+
+        // A body with no tags has no structure, so its bytes must match.
+        let mut obs = healthy();
+        for (address, body) in [(V4, "status ok"), (V6, "status no")] {
+            let mut r = response(200, None, body);
+            r.shape_sha256 = NO_TAGS.to_string();
+            set_first(&mut obs, address, Scheme::Https, r);
+        }
+        assert_eq!(ids(&run(&obs)), ["EQV-03"]);
     }
 
     #[test]

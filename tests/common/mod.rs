@@ -86,6 +86,12 @@ impl World {
         let mut w = World::default();
         for root in [ROOT_V4, ROOT_V6] {
             w.answer(root, ".", QType::Ns, &[ns(".", "a.root-servers.net.")]);
+            // As the real root does: there is no `localhost.` in the
+            // public DNS. Tests that run a check against a local server
+            // get the name from the system resolver after this answer.
+            for qtype in [QType::A, QType::Aaaa] {
+                w.nxdomain(root, "localhost.", qtype, ".");
+            }
         }
         w
     }

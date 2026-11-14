@@ -196,14 +196,22 @@ pub async fn walk_ipv6_only(client: Arc<Client>, name: &str) -> Ipv6Walk {
         ipv4: false,
         ipv6: true,
     };
-    let trace = Resolver::new(client, only_v6)
+    let trace = Resolver::new(client.clone(), only_v6)
         .trace(name, QType::Aaaa)
         .await;
+    // A walk that failed after the query budget ran out failed for want
+    // of budget. It says nothing about the zone.
+    let unfinished = (trace.failed.is_some() && client.budget_spent())
+        .then(|| "this run used up its DNS queries before the walk ended".to_string());
     Ipv6Walk {
         name: name.to_string(),
         path: trace.path,
-        failed_at: trace
-            .failed
-            .map(|(zone, detail)| WalkFailure { zone, detail }),
+        failed_at: match unfinished {
+            Some(_) => None,
+            None => trace
+                .failed
+                .map(|(zone, detail)| WalkFailure { zone, detail }),
+        },
+        unfinished,
     }
 }

@@ -24,7 +24,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpStream, UdpSocket};
 
 use super::limiter::Limiter;
-use crate::observe::{QType, Transport};
+use crate::observe::{QType, SpecialUse, Transport, special_use};
 
 /// Network behaviour of the live backend. The defaults are zoneblick's,
 /// except that a query is retried once, not twice.
@@ -47,6 +47,9 @@ pub struct NetConfig {
     /// can name many that each need resolving; this bounds what it can
     /// make v6blick send. An ordinary run needs well under a hundred.
     pub max_queries: usize,
+    /// Let DNS queries go to nameservers at loopback, private and
+    /// link-local addresses. Set by `--allow-private`.
+    pub allow_private: bool,
 }
 
 impl Default for NetConfig {
@@ -60,6 +63,7 @@ impl Default for NetConfig {
             backoff: Duration::from_millis(500),
             edns_payload: 1232,
             max_queries: 600,
+            allow_private: false,
         }
     }
 }
@@ -121,6 +125,9 @@ pub struct Client {
     limiter: Limiter,
     recording: Option<Mutex<Vec<Exchange>>>,
     sent: AtomicUsize,
+    allow_private: bool,
+    /// Set once a query was refused because the budget was spent.
+    over_budget: std::sync::atomic::AtomicBool,
 }
 
 impl Client {
@@ -128,6 +135,8 @@ impl Client {
     pub fn live(config: NetConfig) -> Self {
         Self {
             limiter: Limiter::new(config.concurrency, config.qps_per_server),
+            allow_private: config.allow_private,
+            over_budget: std::sync::atomic::AtomicBool::new(false),
             backend: Backend::Live(config),
             recording: None,
             sent: AtomicUsize::new(0),
@@ -146,6 +155,8 @@ impl Client {
             backend: Backend::Replay(map),
             recording: None,
             sent: AtomicUsize::new(0),
+            allow_private: false,
+            over_budget: std::sync::atomic::AtomicBool::new(false),
         }
     }
 
@@ -173,8 +184,43 @@ impl Client {
         self.sent.load(Ordering::Relaxed)
     }
 
+    /// True when this run asked for more queries than it may send. What
+    /// failed after that failed for want of budget, not for what the
+    /// zone did.
+    pub fn budget_spent(&self) -> bool {
+        self.over_budget.load(Ordering::Relaxed)
+    }
+
+    /// Why a query to this server is not sent, if it is not. A zone
+    /// names its own nameservers and their addresses, so the rule is the
+    /// prober's: only ordinary public addresses, and with
+    /// `--allow-private` also loopback, private and link-local ones. A
+    /// replaying client sends nothing, and the test worlds live in the
+    /// documentation ranges, so it answers for those too.
+    fn refused(&self, server: IpAddr) -> Option<SpecialUse> {
+        let kind = special_use(server)?;
+        let replaying = matches!(self.backend, Backend::Replay(_));
+        if (self.allow_private && kind.is_local())
+            || (replaying && kind == SpecialUse::Documentation)
+        {
+            None
+        } else {
+            Some(kind)
+        }
+    }
+
     /// Send one query and wait for its outcome.
     pub async fn exchange(&self, spec: &QuerySpec) -> RawOutcome {
+        // Before anything is counted, recorded or sent.
+        if let Some(kind) = self.refused(spec.server) {
+            return RawOutcome::NetError {
+                message: format!(
+                    "not queried: {} is a {} address",
+                    spec.server,
+                    kind.describe()
+                ),
+            };
+        }
         self.sent.fetch_add(1, Ordering::Relaxed);
         let outcome = match &self.backend {
             Backend::Live(config) => self.exchange_live(config, spec).await,
@@ -195,16 +241,8 @@ impl Client {
     }
 
     async fn exchange_live(&self, config: &NetConfig, spec: &QuerySpec) -> RawOutcome {
-        // A zone can name any address as its nameserver. No real one is
-        // on this machine's loopback or link-local range, so those are
-        // never queried: a hostile zone must not get v6blick to probe
-        // services of the machine it runs on.
-        if let Some(why) = never_contacted(spec.server) {
-            return RawOutcome::NetError {
-                message: format!("not queried: {} is a {why} address", spec.server),
-            };
-        }
         if self.sent.load(Ordering::Relaxed) > config.max_queries {
+            self.over_budget.store(true, Ordering::Relaxed);
             return RawOutcome::NetError {
                 message: format!(
                     "not queried: this run has already sent {} queries",
@@ -248,30 +286,13 @@ impl Client {
     }
 }
 
-/// Why no DNS query is ever sent to an address, if none is:
-/// loopback, link-local (which includes cloud metadata services),
-/// unspecified, multicast and broadcast addresses, also when written as
-/// IPv4-mapped IPv6. This guards the resolver only; the prober has its own,
-/// stricter rule for the addresses a host name leads to.
+/// Why no DNS query is sent to an address without `--allow-private`, if
+/// none is: every address that is not an ordinary public one. zoneblick
+/// lets private ranges through here, because internal zones are a normal
+/// thing for it to watch; v6blick checks public sites, and a zone must
+/// not get it to knock on port 53 of hosts inside the user's network.
 pub fn never_contacted(address: IpAddr) -> Option<&'static str> {
-    let address = match address {
-        IpAddr::V6(a) => match a.to_ipv4_mapped() {
-            Some(v4) => IpAddr::V4(v4),
-            None => IpAddr::V6(a),
-        },
-        v4 => v4,
-    };
-    match address {
-        IpAddr::V4(a) if a.is_loopback() => Some("loopback"),
-        IpAddr::V4(a) if a.is_link_local() => Some("link-local"),
-        IpAddr::V4(a) if a.is_unspecified() || a.is_broadcast() => Some("reserved"),
-        IpAddr::V4(a) if a.is_multicast() => Some("multicast"),
-        IpAddr::V6(a) if a.is_loopback() => Some("loopback"),
-        IpAddr::V6(a) if a.is_unspecified() => Some("reserved"),
-        IpAddr::V6(a) if a.is_multicast() => Some("multicast"),
-        IpAddr::V6(a) if a.segments()[0] & 0xffc0 == 0xfe80 => Some("link-local"),
-        _ => None,
-    }
+    special_use(address).map(SpecialUse::describe)
 }
 
 /// Build the wire form of a query. Returns the message ID with it.
@@ -441,12 +462,15 @@ mod tests {
     }
 
     #[test]
-    fn loopback_and_link_local_servers_are_never_asked() {
+    fn only_public_servers_are_asked() {
         let why = |s: &str| never_contacted(s.parse().unwrap());
         assert_eq!(why("127.0.0.1"), Some("loopback"));
-        assert_eq!(why("::ffff:127.0.0.1"), Some("loopback"));
+        assert_eq!(why("::ffff:127.0.0.1"), Some("IPv4-mapped"));
         assert_eq!(why("169.254.169.254"), Some("link-local"));
         assert_eq!(why("fe80::1"), Some("link-local"));
+        assert_eq!(why("10.0.0.53"), Some("private"));
+        assert_eq!(why("fd00::53"), Some("private"));
         assert_eq!(why("2001:500:2f::f"), None);
+        assert_eq!(why("198.41.0.4"), None);
     }
 }

@@ -196,6 +196,8 @@ pub struct ServedBody {
     pub truncated: bool,
     pub body_sha256: String,
     pub shape_sha256: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 /// The structured evidence behind a finding. The `kind` tag names the shape.

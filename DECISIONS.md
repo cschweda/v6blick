@@ -67,6 +67,20 @@ Choices made during implementation where `DESIGN.md` was silent or loose. One li
 - `doctor` looks for Chrome or Chromium in the usual places and on the search path. It never starts it.
 - Test fixtures: recorded runs are saved `--json` documents, written by an ignored test, not by a command-line option.
 
+### After the security audit of 0.1.0
+
+- The address rule is one rule for web servers, redirect targets and nameservers. zoneblick lets DNS queries go to private nameservers; v6blick does not, without `--allow-private`.
+- A replaying DNS client, which sends nothing, also answers for servers in the documentation ranges, because the test worlds live there.
+- One probe with all its redirects has 30 s. The whole run has 120 s; a run that is stopped reports nothing, since half a comparison would mislead.
+- EQV-03: a body with no HTML tags must be the same bytes over both families, and a page must have the same title. A page's title is recorded.
+- A response whose body ends before its announced length, or before its last chunk, is a failed response.
+- An address longer than 2,048 characters is not followed; printed header values stop at 1,024 characters.
+- With `--allow-private`, the system resolver is asked only after a definite "no such name" from the public DNS, not after any failed lookup.
+- A run in which no connection opens on either family is a failed run (`unreachable`, or `not_contacted` when every address was refused), not a list of findings. RCH-01 needs a working IPv4 address when IPv4 was tried.
+- An IPv6-only walk cut short by the query limit is marked `unfinished` and is not judged by ADR-03.
+- No line of the text output begins with an address.
+- The red team's attack tests are kept as regression tests in `tests/redteam_*.rs`.
+
 ### Project site
 
 - The site is one static page in `docs/`, served by GitHub Pages from `main`, at https://cschweda.github.io/v6blick/ until the design's v6blick.zoneblick.com is set up (asked for by the author).
