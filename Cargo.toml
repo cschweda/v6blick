@@ -1,0 +1,28 @@
+[package]
+name = "v6blick"
+version = "0.1.0"
+edition = "2024"
+description = "Tests whether a website works for someone who has no IPv4"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/cschweda/v6blick"
+homepage = "https://cschweda.github.io/v6blick/"
+publish = false
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+hickory-proto = { version = "0.26", default-features = false, features = ["std"] }
+ring = "0.17"
+rustls = { version = "0.23.46", default-features = false, features = ["ring", "std"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio-rustls = { version = "0.26.6", default-features = false, features = ["ring"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "sync", "io-util"] }
+
+[profile.release]
+strip = true
+lto = "thin"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }
