@@ -17,4 +17,5 @@ pub mod doctor;
 pub mod observe;
 pub mod output;
 pub mod probe;
+pub mod proxy;
 pub mod resolve;

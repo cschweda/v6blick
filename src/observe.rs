@@ -412,6 +412,74 @@ impl Observation {
     }
 }
 
+/// The kind of network a page is loaded from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Mode {
+    /// An ordinary connection with IPv4 and IPv6. The baseline.
+    Dual,
+    /// An IPv6-only network with no translator.
+    V6only,
+}
+
+impl Mode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Mode::Dual => "dual",
+            Mode::V6only => "v6only",
+        }
+    }
+}
+
+/// Why the proxy would not open a connection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RefusalReason {
+    /// The host has IPv4 addresses and no IPv6 address, and the mode has
+    /// no IPv4.
+    NoIpv6Address,
+    /// The destination is written as an IPv4 address, and the mode has
+    /// no IPv4.
+    LiteralIpv4,
+    /// Every address of the host is one v6blick does not contact.
+    NotPublic,
+}
+
+/// What the proxy did with one connection the browser asked for.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "result", rename_all = "snake_case")]
+pub enum ProxyOutcome {
+    Connected {
+        address: IpAddr,
+        family: Family,
+        ms: u64,
+    },
+    /// Not attempted, by the rule of the mode or the address rule.
+    Refused {
+        reason: RefusalReason,
+        message: String,
+    },
+    /// Attempted and not opened. `stage` is `resolve` or `connect`.
+    Failed {
+        stage: String,
+        message: String,
+        /// The addresses that were tried.
+        addresses: Vec<IpAddr>,
+    },
+}
+
+/// One connection the browser asked the proxy for.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProxiedConnection {
+    /// The host the browser named. Lowercase, no trailing dot.
+    pub host: String,
+    pub port: u16,
+    /// True for an HTTPS tunnel (`CONNECT`), false for plain HTTP.
+    pub tunnel: bool,
+    #[serde(flatten)]
+    pub outcome: ProxyOutcome,
+}
+
 /// Why an address is not an ordinary public one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

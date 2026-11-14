@@ -195,6 +195,11 @@ pub struct Resolver {
     cache: Mutex<HashMap<String, Vec<NsEntry>>>,
     /// Hostnames being resolved right now, to break dependency loops.
     visiting: Mutex<HashSet<String>>,
+    /// Added for v6blick's page test, which looks up many hosts in one
+    /// run: when set, the servers of a zone are tried starting from a
+    /// different one each time, so that the same few servers of a
+    /// top-level domain are not asked for every host.
+    spread: Option<std::sync::atomic::AtomicUsize>,
 }
 
 impl Resolver {
@@ -208,7 +213,16 @@ impl Resolver {
             vantage,
             cache: Mutex::new(HashMap::from([(".".to_string(), roots)])),
             visiting: Mutex::new(HashSet::new()),
+            spread: None,
         }
+    }
+
+    /// Spread queries over the servers of each zone. For runs that
+    /// resolve many names. A replayed run keeps the fixed order, so
+    /// that it asks what was recorded.
+    pub fn spreading(mut self) -> Self {
+        self.spread = Some(std::sync::atomic::AtomicUsize::new(0));
+        self
     }
 
     /// Walk from the root towards `name` and record every referral on the
@@ -477,6 +491,20 @@ impl Resolver {
             .filter(|(_, a)| self.vantage.can_reach(a))
             .collect();
         out.sort_by_key(|(_, a)| a.is_ipv6());
+        if let Some(turn) = &self.spread {
+            // Rotate within each family, keeping IPv4 before IPv6.
+            let turn = turn.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let split = out
+                .iter()
+                .position(|(_, a)| a.is_ipv6())
+                .unwrap_or(out.len());
+            let (v4, v6) = out.split_at_mut(split);
+            for group in [v4, v6] {
+                if !group.is_empty() {
+                    group.rotate_left(turn % group.len());
+                }
+            }
+        }
         out
     }
 

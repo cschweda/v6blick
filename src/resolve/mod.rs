@@ -80,7 +80,51 @@ pub async fn detect_vantage(client: &Client) -> Vantage {
 /// Look up the A and AAAA records of `host` from the root, following
 /// aliases from zone to zone. `host` is normalised.
 pub async fn lookup_host(client: Arc<Client>, vantage: Vantage, host: &str) -> HostLookup {
-    let resolver = Resolver::new(client, vantage);
+    lookup_with(&Resolver::new(client, vantage), host).await
+}
+
+/// Looks up many hosts in one run, as the page test does: one resolver,
+/// so that what it learned about `com.` for the first host serves the
+/// next, and each host looked up once. Lookups run one at a time; the
+/// resolver's loop guard is not made for several at once.
+pub struct HostResolver {
+    resolver: Resolver,
+    gate: tokio::sync::Mutex<()>,
+    known: std::sync::Mutex<std::collections::HashMap<String, HostLookup>>,
+}
+
+impl HostResolver {
+    pub fn new(client: Arc<Client>, vantage: Vantage) -> Self {
+        // A live run spreads its queries over each zone's servers; a
+        // replayed one asks exactly what was recorded.
+        let resolver = Resolver::new(client.clone(), vantage);
+        Self {
+            resolver: if client.is_live() {
+                resolver.spreading()
+            } else {
+                resolver
+            },
+            gate: tokio::sync::Mutex::new(()),
+            known: std::sync::Mutex::new(std::collections::HashMap::new()),
+        }
+    }
+
+    /// The addresses of `host`, which is normalised. Asked once per run.
+    pub async fn lookup(&self, host: &str) -> HostLookup {
+        let _one_at_a_time = self.gate.lock().await;
+        if let Some(found) = self.known.lock().expect("lock").get(host) {
+            return found.clone();
+        }
+        let lookup = lookup_with(&self.resolver, host).await;
+        self.known
+            .lock()
+            .expect("lock")
+            .insert(host.to_string(), lookup.clone());
+        lookup
+    }
+}
+
+async fn lookup_with(resolver: &Resolver, host: &str) -> HostLookup {
     let mut name = host.to_string();
     let mut chain: Vec<String> = Vec::new();
     loop {
