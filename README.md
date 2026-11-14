@@ -6,6 +6,7 @@ v6blick tests a host or a whole page from three kinds of network: an ordinary du
 
 **Status:** in design, with Phase 0 (`check` and `doctor`) being built. Nothing is released yet. Sections below say which parts are planned.
 
+- Website: https://cschweda.github.io/v6blick/
 - Design document: [DESIGN.md](DESIGN.md)
 - Decisions made while building: [DECISIONS.md](DECISIONS.md)
 - Companion project: [zoneblick](https://zoneblick.com), which watches DNS zones over time
@@ -338,7 +339,7 @@ Unit tests do not use the network. Checks are tested against hand-built observat
 |---|---|
 | `DESIGN.md` | High-level design |
 | `KICKOFF.md` | The prompt that started Phase 0 |
-| `docs/og-image.png`, `docs/favicon.svg` | The social card (1200x630) and the icon, for the project site |
+| `docs/` | The project site, served by GitHub Pages: one static page, the social card (`og-image.png`, 1200x630), icons, `robots.txt` and `llms.txt` |
 | `packaging/og-image.html` | Source of the social card, with the command that renders it |
 
 ## Responsible use

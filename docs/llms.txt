@@ -1,0 +1,27 @@
+# v6blick
+
+> v6blick is a command-line tool, written in Rust, that tests whether a website works for someone who has no IPv4. It is in design; Phase 0 (`check` and `doctor`) is being built and nothing is released yet.
+
+v6blick tests a host or a whole page from three kinds of network: `dual` (an ordinary connection), `nat64` (IPv6-only with a NAT64 translator, simulated) and `v6only` (IPv6-only with no translator). It reports what breaks in each, with stable check IDs, four severities (critical, warning, notice, info), JSON output and exit codes for CI (0 clean, 1 notices or warnings, 2 critical, 3 the run failed).
+
+## Commands
+
+- `v6blick check <host-or-url>`: DNS and connection checks over IPv4 and IPv6 separately, and a comparison of the two. No browser. Phase 0.
+- `v6blick doctor`: whether this machine has working IPv6 and whether Chrome or Chromium is installed. Phase 0.
+- `v6blick page <url>`: loads the page in an installed Chrome through a local proxy that enforces each network mode, and lists every resource that fails. Planned.
+
+## Checks
+
+- ADR-01 to ADR-03: addresses (no AAAA record, an unusable AAAA record, a zone that cannot be resolved over IPv6 alone)
+- RCH-01 to RCH-04: reachability (a published AAAA that nothing answers, TLS failing over IPv6 only, slow IPv6 connects, a long wait before IPv4 takes over)
+- EQV-01 to EQV-03: equivalence (a different certificate, status, redirect or body over IPv6)
+- PGE-01 to PGE-04: page resources that fail without IPv4 (planned, needs a browser)
+- LIT-01 to LIT-02: literal IPv4 addresses in a page (planned, needs a browser)
+- MTU-01: large responses that stall over IPv6 only (planned)
+
+## Links
+
+- [Source](https://github.com/cschweda/v6blick)
+- [Design document](https://github.com/cschweda/v6blick/blob/main/DESIGN.md)
+- [README](https://github.com/cschweda/v6blick/blob/main/README.md)
+- [zoneblick](https://zoneblick.com/): the companion project, a self-hosted DNS zone watchdog
