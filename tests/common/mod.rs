@@ -211,3 +211,4 @@ impl World {
         Arc::new(Client::replay(&self.fixture("test.")))
     }
 }
+pub mod server;

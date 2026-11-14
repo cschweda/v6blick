@@ -411,8 +411,11 @@ impl Resolver {
     ) -> Result<(Reply, String, IpAddr), ResolveError> {
         let mut candidates = self.candidates(entries);
         if candidates.is_empty() && depth < MAX_DEPTH {
-            // A glueless delegation: resolve nameserver names until one works.
-            for entry in entries.iter().take(3) {
+            // A glueless delegation: resolve nameserver names until one
+            // works. Each of them may be glueless in turn, so only the
+            // first level tries several names; deeper levels try one.
+            let tries = if depth == 0 { 3 } else { 1 };
+            for entry in entries.iter().take(tries) {
                 let res = self.resolve_host(entry.name.clone(), depth + 1).await;
                 if res.addresses.is_empty() {
                     continue;

@@ -42,6 +42,11 @@ pub struct NetConfig {
     pub backoff: Duration,
     /// The UDP payload size advertised in EDNS queries.
     pub edns_payload: u16,
+    /// The most queries one client sends in its lifetime, which is one
+    /// run. A zone chooses its own nameserver names, and a hostile one
+    /// can name many that each need resolving; this bounds what it can
+    /// make v6blick send. An ordinary run needs well under a hundred.
+    pub max_queries: usize,
 }
 
 impl Default for NetConfig {
@@ -54,6 +59,7 @@ impl Default for NetConfig {
             retries: 1,
             backoff: Duration::from_millis(500),
             edns_payload: 1232,
+            max_queries: 600,
         }
     }
 }
@@ -196,6 +202,14 @@ impl Client {
         if let Some(why) = never_contacted(spec.server) {
             return RawOutcome::NetError {
                 message: format!("not queried: {} is a {why} address", spec.server),
+            };
+        }
+        if self.sent.load(Ordering::Relaxed) > config.max_queries {
+            return RawOutcome::NetError {
+                message: format!(
+                    "not queried: this run has already sent {} queries",
+                    config.max_queries
+                ),
             };
         }
         let (id, wire) = match build_query(spec, config.edns_payload) {

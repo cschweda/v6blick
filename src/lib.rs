@@ -11,4 +11,5 @@
 //! - [`cli`]: argument parsing and the commands
 
 pub mod observe;
+pub mod probe;
 pub mod resolve;
