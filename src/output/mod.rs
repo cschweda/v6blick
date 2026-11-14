@@ -147,6 +147,8 @@ mod tests {
             severity,
             name: "example.org.".to_string(),
             summary: String::new(),
+            meaning: String::new(),
+            fix: String::new(),
             evidence: Evidence::NoAaaa { ipv4: vec![] },
         }
     }

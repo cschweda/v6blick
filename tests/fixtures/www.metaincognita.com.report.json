@@ -1,0 +1,664 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0",
+  "host": "www.metaincognita.com.",
+  "target": "www.metaincognita.com",
+  "started_at_unix": 1794677736,
+  "vantage": {
+    "ipv4": true,
+    "ipv6": true
+  },
+  "lookup": {
+    "name": "www.metaincognita.com.",
+    "source": "root",
+    "cname_chain": [
+      "musical-cheesecake-17372d.netlify.app."
+    ],
+    "a": {
+      "status": "answer",
+      "addresses": [
+        "18.208.88.157",
+        "98.84.224.111"
+      ]
+    },
+    "aaaa": {
+      "status": "answer",
+      "addresses": [
+        "2600:1f18:16e:df01::258",
+        "2600:1f18:16e:df01::259"
+      ]
+    }
+  },
+  "ipv6_walks": [
+    {
+      "name": "www.metaincognita.com.",
+      "path": [
+        {
+          "from_zone": ".",
+          "to_zone": "com.",
+          "server_name": "a.root-servers.net.",
+          "server_address": "2001:503:ba3e::2:30",
+          "ns": [
+            "a.gtld-servers.net.",
+            "b.gtld-servers.net.",
+            "c.gtld-servers.net.",
+            "d.gtld-servers.net.",
+            "e.gtld-servers.net.",
+            "f.gtld-servers.net.",
+            "g.gtld-servers.net.",
+            "h.gtld-servers.net.",
+            "i.gtld-servers.net.",
+            "j.gtld-servers.net.",
+            "k.gtld-servers.net.",
+            "l.gtld-servers.net.",
+            "m.gtld-servers.net."
+          ],
+          "glue": [
+            {
+              "name": "a.gtld-servers.net.",
+              "address": "192.5.6.30"
+            },
+            {
+              "name": "a.gtld-servers.net.",
+              "address": "2001:503:a83e::2:30"
+            },
+            {
+              "name": "b.gtld-servers.net.",
+              "address": "192.33.14.30"
+            },
+            {
+              "name": "b.gtld-servers.net.",
+              "address": "2001:503:231d::2:30"
+            },
+            {
+              "name": "c.gtld-servers.net.",
+              "address": "192.26.92.30"
+            },
+            {
+              "name": "c.gtld-servers.net.",
+              "address": "2001:503:83eb::30"
+            },
+            {
+              "name": "d.gtld-servers.net.",
+              "address": "192.31.80.30"
+            },
+            {
+              "name": "d.gtld-servers.net.",
+              "address": "2001:500:856e::30"
+            },
+            {
+              "name": "e.gtld-servers.net.",
+              "address": "192.12.94.30"
+            },
+            {
+              "name": "e.gtld-servers.net.",
+              "address": "2001:502:1ca1::30"
+            },
+            {
+              "name": "f.gtld-servers.net.",
+              "address": "192.35.51.30"
+            },
+            {
+              "name": "f.gtld-servers.net.",
+              "address": "2001:503:d414::30"
+            },
+            {
+              "name": "g.gtld-servers.net.",
+              "address": "192.42.93.30"
+            },
+            {
+              "name": "g.gtld-servers.net.",
+              "address": "2001:503:eea3::30"
+            },
+            {
+              "name": "h.gtld-servers.net.",
+              "address": "192.54.112.30"
+            },
+            {
+              "name": "h.gtld-servers.net.",
+              "address": "2001:502:8cc::30"
+            },
+            {
+              "name": "i.gtld-servers.net.",
+              "address": "192.43.172.30"
+            },
+            {
+              "name": "i.gtld-servers.net.",
+              "address": "2001:503:39c1::30"
+            },
+            {
+              "name": "j.gtld-servers.net.",
+              "address": "192.48.79.30"
+            },
+            {
+              "name": "j.gtld-servers.net.",
+              "address": "2001:502:7094::30"
+            },
+            {
+              "name": "k.gtld-servers.net.",
+              "address": "192.52.178.30"
+            },
+            {
+              "name": "k.gtld-servers.net.",
+              "address": "2001:503:d2d::30"
+            },
+            {
+              "name": "l.gtld-servers.net.",
+              "address": "192.41.162.30"
+            },
+            {
+              "name": "l.gtld-servers.net.",
+              "address": "2001:500:d937::30"
+            },
+            {
+              "name": "m.gtld-servers.net.",
+              "address": "192.55.83.30"
+            },
+            {
+              "name": "m.gtld-servers.net.",
+              "address": "2001:501:b1f9::30"
+            }
+          ]
+        },
+        {
+          "from_zone": "com.",
+          "to_zone": "metaincognita.com.",
+          "server_name": "a.gtld-servers.net.",
+          "server_address": "2001:503:a83e::2:30",
+          "ns": [
+            "ns1.dnsimple-edge.com.",
+            "ns2.dnsimple-edge.net.",
+            "ns3.dnsimple-edge.io.",
+            "ns4.dnsimple-edge.org."
+          ],
+          "glue": [
+            {
+              "name": "ns1.dnsimple-edge.com.",
+              "address": "199.247.152.53"
+            },
+            {
+              "name": "ns1.dnsimple-edge.com.",
+              "address": "2620:111:8004::53"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "musical-cheesecake-17372d.netlify.app.",
+      "path": [
+        {
+          "from_zone": ".",
+          "to_zone": "app.",
+          "server_name": "a.root-servers.net.",
+          "server_address": "2001:503:ba3e::2:30",
+          "ns": [
+            "ns-tld1.charlestonroadregistry.com.",
+            "ns-tld2.charlestonroadregistry.com.",
+            "ns-tld3.charlestonroadregistry.com.",
+            "ns-tld4.charlestonroadregistry.com.",
+            "ns-tld5.charlestonroadregistry.com."
+          ],
+          "glue": [
+            {
+              "name": "ns-tld1.charlestonroadregistry.com.",
+              "address": "216.239.32.105"
+            },
+            {
+              "name": "ns-tld1.charlestonroadregistry.com.",
+              "address": "2001:4860:4802:32::69"
+            },
+            {
+              "name": "ns-tld2.charlestonroadregistry.com.",
+              "address": "216.239.34.105"
+            },
+            {
+              "name": "ns-tld2.charlestonroadregistry.com.",
+              "address": "2001:4860:4802:34::69"
+            },
+            {
+              "name": "ns-tld3.charlestonroadregistry.com.",
+              "address": "216.239.36.105"
+            },
+            {
+              "name": "ns-tld3.charlestonroadregistry.com.",
+              "address": "2001:4860:4802:36::69"
+            },
+            {
+              "name": "ns-tld4.charlestonroadregistry.com.",
+              "address": "216.239.38.105"
+            },
+            {
+              "name": "ns-tld4.charlestonroadregistry.com.",
+              "address": "2001:4860:4802:38::69"
+            },
+            {
+              "name": "ns-tld5.charlestonroadregistry.com.",
+              "address": "216.239.60.105"
+            },
+            {
+              "name": "ns-tld5.charlestonroadregistry.com.",
+              "address": "2001:4860:4805::69"
+            }
+          ]
+        },
+        {
+          "from_zone": "app.",
+          "to_zone": "netlify.app.",
+          "server_name": "ns-tld1.charlestonroadregistry.com.",
+          "server_address": "2001:4860:4802:32::69",
+          "ns": [
+            "dns1.p01.nsone.net.",
+            "dns2.p01.nsone.net.",
+            "dns3.p01.nsone.net.",
+            "dns4.p01.nsone.net."
+          ],
+          "glue": []
+        }
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "family": "ipv4",
+      "address": "18.208.88.157",
+      "port": 443,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 37
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 42,
+        "certificate": {
+          "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
+          "names": [
+            "metaincognita.com",
+            "www.metaincognita.com"
+          ],
+          "not_after_unix": 1800962631,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "18.208.88.157",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "address": "75.2.60.5",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 355436,
+          "body_truncated": false,
+          "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+        }
+      ]
+    },
+    {
+      "family": "ipv4",
+      "address": "98.84.224.111",
+      "port": 443,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 41
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 60,
+        "certificate": {
+          "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
+          "names": [
+            "metaincognita.com",
+            "www.metaincognita.com"
+          ],
+          "not_after_unix": 1800962631,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "98.84.224.111",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "address": "75.2.60.5",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 355436,
+          "body_truncated": false,
+          "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+        }
+      ]
+    },
+    {
+      "family": "ipv6",
+      "address": "2600:1f18:16e:df01::258",
+      "port": 443,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 39
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 42,
+        "certificate": {
+          "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
+          "names": [
+            "metaincognita.com",
+            "www.metaincognita.com"
+          ],
+          "not_after_unix": 1800962631,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "2600:1f18:16e:df01::258",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "result": "failed",
+          "stage": "resolve",
+          "message": "metaincognita.com has no IPv6 address"
+        }
+      ]
+    },
+    {
+      "family": "ipv6",
+      "address": "2600:1f18:16e:df01::259",
+      "port": 443,
+      "scheme": "https",
+      "connect": {
+        "result": "connected",
+        "ms": 40
+      },
+      "tls": {
+        "result": "ok",
+        "ms": 43,
+        "certificate": {
+          "sha256": "3c0075c29f9999ef98f567e72733ed7e87ec74f35be174025e31ba2bd47b2fc1",
+          "names": [
+            "metaincognita.com",
+            "www.metaincognita.com"
+          ],
+          "not_after_unix": 1800962631,
+          "covers_host": true
+        }
+      },
+      "exchanges": [
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "2600:1f18:16e:df01::259",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "result": "failed",
+          "stage": "resolve",
+          "message": "metaincognita.com has no IPv6 address"
+        }
+      ]
+    },
+    {
+      "family": "ipv4",
+      "address": "18.208.88.157",
+      "port": 80,
+      "scheme": "http",
+      "connect": {
+        "result": "connected",
+        "ms": 34
+      },
+      "exchanges": [
+        {
+          "url": "http://www.metaincognita.com/",
+          "address": "18.208.88.157",
+          "result": "response",
+          "status": 301,
+          "location": "https://www.metaincognita.com/",
+          "body_bytes": 45,
+          "body_truncated": false,
+          "body_sha256": "550a91808439ef208b205d452f47d693f48b3f445109cebec03b91a2ae063af5",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "18.208.88.157",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "address": "75.2.60.5",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 355436,
+          "body_truncated": false,
+          "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+        }
+      ]
+    },
+    {
+      "family": "ipv4",
+      "address": "98.84.224.111",
+      "port": 80,
+      "scheme": "http",
+      "connect": {
+        "result": "connected",
+        "ms": 35
+      },
+      "exchanges": [
+        {
+          "url": "http://www.metaincognita.com/",
+          "address": "98.84.224.111",
+          "result": "response",
+          "status": 301,
+          "location": "https://www.metaincognita.com/",
+          "body_bytes": 45,
+          "body_truncated": false,
+          "body_sha256": "550a91808439ef208b205d452f47d693f48b3f445109cebec03b91a2ae063af5",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "98.84.224.111",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "address": "75.2.60.5",
+          "result": "response",
+          "status": 200,
+          "body_bytes": 355436,
+          "body_truncated": false,
+          "body_sha256": "f1f8313ccf576dee154ea116d9ca1ccff97ade7f271d4d22692d6bfc7d75a02a",
+          "shape_sha256": "a8ff959a67a9b067277c52aaf48362e12aed7255b35848826c163ddf0361015f"
+        }
+      ]
+    },
+    {
+      "family": "ipv6",
+      "address": "2600:1f18:16e:df01::258",
+      "port": 80,
+      "scheme": "http",
+      "connect": {
+        "result": "connected",
+        "ms": 39
+      },
+      "exchanges": [
+        {
+          "url": "http://www.metaincognita.com/",
+          "address": "2600:1f18:16e:df01::258",
+          "result": "response",
+          "status": 301,
+          "location": "https://www.metaincognita.com/",
+          "body_bytes": 45,
+          "body_truncated": false,
+          "body_sha256": "550a91808439ef208b205d452f47d693f48b3f445109cebec03b91a2ae063af5",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "2600:1f18:16e:df01::258",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "result": "failed",
+          "stage": "resolve",
+          "message": "metaincognita.com has no IPv6 address"
+        }
+      ]
+    },
+    {
+      "family": "ipv6",
+      "address": "2600:1f18:16e:df01::259",
+      "port": 80,
+      "scheme": "http",
+      "connect": {
+        "result": "connected",
+        "ms": 34
+      },
+      "exchanges": [
+        {
+          "url": "http://www.metaincognita.com/",
+          "address": "2600:1f18:16e:df01::259",
+          "result": "response",
+          "status": 301,
+          "location": "https://www.metaincognita.com/",
+          "body_bytes": 45,
+          "body_truncated": false,
+          "body_sha256": "550a91808439ef208b205d452f47d693f48b3f445109cebec03b91a2ae063af5",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://www.metaincognita.com/",
+          "address": "2600:1f18:16e:df01::259",
+          "result": "response",
+          "status": 301,
+          "location": "https://metaincognita.com/",
+          "body_bytes": 41,
+          "body_truncated": false,
+          "body_sha256": "c0899aed7256bf5724d5ac128202a32a2239da4e71c00e05585698fda18a9097",
+          "shape_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://metaincognita.com/",
+          "result": "failed",
+          "stage": "resolve",
+          "message": "metaincognita.com has no IPv6 address"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "check_id": "EQV-02",
+      "severity": "warning",
+      "name": "www.metaincognita.com.",
+      "summary": "https://www.metaincognita.com/ redirects to https://metaincognita.com/, which works over IPv4 and fails over IPv6",
+      "meaning": "Visitors on IPv6 get a different answer than visitors on IPv4: another page, an error, or a redirect that leads nowhere for them.",
+      "fix": "Make the IPv6 side serve the same configuration as the IPv4 side. Where a redirect leads to a host with no IPv6 address, give that host an AAAA record, or redirect to a name that has one.",
+      "evidence": {
+        "kind": "response_mismatch",
+        "url": "https://www.metaincognita.com/",
+        "ipv4": [
+          {
+            "address": "18.208.88.157",
+            "status": 301,
+            "location": "https://metaincognita.com/",
+            "ended": "page",
+            "final_url": "https://metaincognita.com/",
+            "final_status": 200
+          },
+          {
+            "address": "98.84.224.111",
+            "status": 301,
+            "location": "https://metaincognita.com/",
+            "ended": "page",
+            "final_url": "https://metaincognita.com/",
+            "final_status": 200
+          }
+        ],
+        "ipv6": [
+          {
+            "address": "2600:1f18:16e:df01::258",
+            "status": 301,
+            "location": "https://metaincognita.com/",
+            "ended": "failed",
+            "final_url": "https://metaincognita.com/",
+            "failure": "resolve: metaincognita.com has no IPv6 address"
+          },
+          {
+            "address": "2600:1f18:16e:df01::259",
+            "status": 301,
+            "location": "https://metaincognita.com/",
+            "ended": "failed",
+            "final_url": "https://metaincognita.com/",
+            "failure": "resolve: metaincognita.com has no IPv6 address"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "critical": 0,
+    "warning": 1,
+    "notice": 0,
+    "info": 0
+  },
+  "exit_code": 1
+}

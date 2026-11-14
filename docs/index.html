@@ -13,13 +13,13 @@
 <meta property="og:image" content="https://cschweda.github.io/v6blick/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="v6blick. See your site without IPv4. An IPv6 readiness test for websites, written in Rust. One page loaded in three networks: 42 of 42 requests ok on a dual-stack connection, 41 of 42 with a NAT64 translator, 33 of 42 on IPv6 only.">
+<meta property="og:image:alt" content="v6blick. See your site without IPv4. An IPv6 readiness test for websites, written in Rust. Real findings: www.metaincognita.com answers over IPv4 and its redirect fails over IPv6, because metaincognita.com has no AAAA record.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="author" content="Christopher Schweda">
 <meta property="article:published_time" content="2026-11-14T17:00:00Z">
-<meta property="article:modified_time" content="2026-11-14T17:00:00Z">
+<meta property="article:modified_time" content="2026-11-14T18:00:00Z">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -285,6 +285,11 @@ footer .grid{row-gap:24px}
 }
 @media (max-width:520px){.checks,.checks.three{grid-template-columns:1fr}html:not(.js) nav{gap:16px}html:not(.js) nav a.opt{display:none}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn,.menu span,.menu span::before,.menu span::after{transition:none}}
+.shots{display:grid;gap:40px;margin:0 0 8px}
+.shots figure{margin:0}
+.shots img{display:block;max-width:100%;height:auto;border:1px solid var(--line)}
+.shots figcaption{margin-top:12px;color:var(--muted);font-size:15.5px;max-width:44em}
+.shots figcaption b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -295,6 +300,7 @@ footer .grid{row-gap:24px}
     <a class="mark" href="./"><i aria-hidden="true"></i><i aria-hidden="true"></i>v6blick</a>
     <button class="menu" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menu"><span aria-hidden="true"></span></button>
     <nav id="nav" aria-label="Primary">
+      <a class="opt" href="#output">Output</a>
       <a class="opt" href="#why">Why</a>
       <a class="opt" href="#networks">Networks</a>
       <a class="opt" href="#checks">Checks</a>
@@ -312,35 +318,35 @@ footer .grid{row-gap:24px}
     <div class="grid">
       <div class="label">IPv6 readiness test for websites</div>
       <h1>See your site <em>without IPv4.</em></h1>
-      <p class="lede">v6blick loads a host or a whole page from three kinds of network: an ordinary connection, an IPv6-only network with a translator, and an IPv6-only network with none. It names every resource that breaks, down to the one third-party script that has no IPv6 address.</p>
+      <p class="lede">v6blick connects to a site over IPv4 and over IPv6 separately and compares the two. It tells you what breaks for a visitor who has no IPv4, what that means, and how to fix it. A whole-page test, down to the one third-party script with no IPv6 address, is being built.</p>
       <div class="cta">
-        <a class="btn primary" href="https://github.com/cschweda/v6blick/blob/main/DESIGN.md">Read the design <span aria-hidden="true">&rarr;</span></a>
+        <a class="btn primary" href="#output">See real output <span aria-hidden="true">&darr;</span></a>
         <a class="btn" href="https://github.com/cschweda/v6blick">Source on GitHub <span aria-hidden="true">&nearr;</span></a>
       </div>
     </div>
   </div>
 
-  <div class="specimen" role="group" aria-label="Example of a page tested in three networks">
+  <div class="specimen" role="group" aria-label="A real check of the author's own site">
     <div class="wrap">
       <div class="grid">
         <div class="spec-head">
-          <div class="label">One page, three networks</div>
-          <p><span class="mono">example.org</span> loads 42 resources. Nine of them come from hosts that have no IPv6 address, and one is asked for by its IPv4 address.</p>
+          <div class="label">A real check, 14 November 2026</div>
+          <p><span class="mono">www.metaincognita.com</span> has IPv6 addresses. It redirects to <span class="mono">metaincognita.com</span>, which has none, so the visit ends there for anyone without IPv4.</p>
         </div>
-        <div class="diff" tabindex="0" role="img" aria-label="Findings: a warning for a literal IPv4 address, a warning for a first-party host with no AAAA record, and two notices for third-party hosts with no AAAA record.">
-          <div class="ctx">&nbsp; ok&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; www.example.org</div>
-          <div class="del">- warning LIT-01 192.0.2.44/track.gif</div>
-          <div class="del">- warning PGE-02 static.example.org</div>
-          <div class="ctx">&nbsp; notice&nbsp; PGE-02 fonts.thirdparty.example</div>
-          <div class="ctx">&nbsp; notice&nbsp; PGE-02 cdn.widgets.example</div>
+        <div class="diff" tabindex="0" role="img" aria-label="Over IPv4 the redirect from www.metaincognita.com ends at a page with status 200. Over IPv6 it fails, because metaincognita.com has no IPv6 address. Two warnings: EQV-02 and ADR-01.">
+          <div class="ctx">&nbsp; IPv4&nbsp; 301 -&gt; 200&nbsp;&nbsp;&nbsp;&nbsp; https://metaincognita.com/</div>
+          <div class="del">- IPv6&nbsp; 301 -&gt; failed&nbsp; no IPv6 address</div>
+          <div class="del">- warning EQV-02&nbsp; www.metaincognita.com</div>
+          <div class="del">- warning ADR-01&nbsp; metaincognita.com</div>
+          <div class="add">+ clean&nbsp;&nbsp; 10 checks zoneblick.com</div>
         </div>
         <div class="ns">
           <table>
-            <thead><tr><th scope="col">Network</th><th scope="col">Requests ok</th></tr></thead>
+            <thead><tr><th scope="col">Host</th><th scope="col">Result</th></tr></thead>
             <tbody>
-              <tr><td>dual<div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></td><td>42 of 42</td></tr>
-              <tr><td>nat64<div class="bars" aria-hidden="true"><i></i><i></i><i></i><i class="t"></i><i class="t"></i><i></i><i></i><i></i><i></i><i class="t"></i><i></i><i></i><i class="t"></i><i class="t"></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i class="t"></i><i></i><i></i><i></i><i class="t"></i><i></i><i></i><i></i><i class="t"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></td><td>41 of 42</td></tr>
-              <tr><td class="bad">v6only<div class="bars" aria-hidden="true"><i></i><i></i><i></i><i class="x"></i><i class="x"></i><i></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i class="x"></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></td><td class="bad">33 of 42</td></tr>
+              <tr><td>zoneblick.com</td><td>clean</td></tr>
+              <tr><td class="bad">www.metaincognita.com</td><td class="bad">1 warning</td></tr>
+              <tr><td class="bad">metaincognita.com</td><td class="bad">1 warning</td></tr>
             </tbody>
           </table>
         </div>
@@ -348,9 +354,42 @@ footer .grid{row-gap:24px}
     </div>
   </div>
 
-  <section id="why">
+  <section id="output">
     <div class="wrap grid">
       <div class="num">01</div>
+      <div class="body">
+        <h2>What it looks like.</h2>
+        <p class="intro">Real output, for the author's own sites. Each finding has its check ID, the host and the evidence, then what it means for visitors and how to fix it.</p>
+        <div class="shots">
+          <figure>
+            <img src="screenshots/check-redirect.png" width="940" height="1072" loading="lazy" alt="Terminal output of v6blick check www.metaincognita.com. The host is an alias with two IPv4 and two IPv6 addresses. Over IPv4 the redirect to https://metaincognita.com/ ends at a page with status 200. Over IPv6 it fails, because metaincognita.com has no IPv6 address. One warning, EQV-02, with what it means and how to fix it.">
+            <figcaption><b>A redirect that strands IPv6 visitors.</b> The <span class="mono">www</span> name has IPv6 addresses and answers over them. It redirects to the bare domain, which has no AAAA record. A dual-stack browser never notices.</figcaption>
+          </figure>
+          <figure>
+            <img src="screenshots/check-no-aaaa.png" width="799" height="783" loading="lazy" alt="Terminal output of v6blick check metaincognita.com. Two A records and no AAAA record. One warning, ADR-01: the host has an IPv4 address and no IPv6 address, with what it means and how to fix it.">
+            <figcaption><b>No IPv6 address at all.</b> The bare domain has two A records and no AAAA record. The finding says who is affected and what to publish.</figcaption>
+          </figure>
+          <figure>
+            <img src="screenshots/check-clean.png" width="744" height="824" loading="lazy" alt="Terminal output of v6blick check zoneblick.com. Four IPv4 and four IPv6 addresses, all answering alike on ports 443 and 80 with the same certificate. No findings.">
+            <figcaption><b>A clean site.</b> Four addresses in each family, the same certificate, the same redirect and the same page over both. Exit code 0.</figcaption>
+          </figure>
+        </div>
+
+        <h3 class="h3big">What a finding tells you.</h3>
+        <p class="h3sub">Three questions are answered for every finding: how bad is it, what does it mean for a visitor, and can it be fixed. Every finding of the ten checks that work today can be fixed by whoever runs the site's DNS or its servers.</p>
+        <ul class="cad">
+          <li><b>Critical</b><p>Broken now for visitors who use IPv6: a published address that nothing answers, or a secure connection that fails over IPv6 only. Fix it first. Exit code 2.</p></li>
+          <li><b>Warning</b><p>Wrong or missing for IPv6: visitors without IPv4 are affected, and it can be fixed. No AAAA record, another certificate, a redirect that leads nowhere. Exit code 1.</p></li>
+          <li><b>Notice</b><p>Worth a look. It may be harmless, or chance in one measurement: a slower connection over IPv6, or a page that differs between two loads. Exit code 1.</p></li>
+          <li><b>Means, and Fix</b><p>Under each finding, two short paragraphs: who is affected and how, and what to change. The same text is in the JSON output, as <span class="mono">meaning</span> and <span class="mono">fix</span>.</p></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="wrap grid">
+      <div class="num">02</div>
       <div class="body">
         <h2>The fault your own browser hides.</h2>
         <p class="define">A browser that cannot reach a site over IPv6 quietly tries again over IPv4. A visitor who has no IPv4 gets no second try.</p>
@@ -389,10 +428,10 @@ footer .grid{row-gap:24px}
 
   <section id="networks">
     <div class="wrap grid">
-      <div class="num">02</div>
+      <div class="num">03</div>
       <div class="body">
         <h2>Three networks, one page.</h2>
-        <p class="intro">The same page is loaded once in each. The difference between the three runs is the report.</p>
+        <p class="intro">Planned, for the whole-page test. The same page is loaded once in each, and the difference between the three runs is the report.</p>
         <ul class="cad">
           <li><b>dual</b><p>An ordinary connection with IPv4 and IPv6. The baseline: nothing can break here, by definition.</p></li>
           <li><b>nat64</b><p>An IPv6-only network with a translator, as on many mobile networks. Shows what a real mobile visitor without IPv4 hits today: IPv4 addresses written directly into pages or scripts.</p></li>
@@ -413,11 +452,11 @@ footer .grid{row-gap:24px}
 
   <section id="checks">
     <div class="wrap grid">
-      <div class="num">03</div>
+      <div class="num">04</div>
       <div class="body">
         <h2>Seventeen checks, every one about IPv6.</h2>
         <p class="intro">Each check has a stable ID, a severity, and the evidence behind it. The most telling ones are comparisons: the same name, asked over IPv4 and over IPv6.</p>
-        <p class="tier"><b>Being built</b><span>Phase 0: the address, reachability and equivalence checks, in <span class="mono">v6blick check</span>. No browser needed.</span></p>
+        <p class="tier"><b>Working today</b><span>Ten checks: addresses, reachability and equivalence, in <span class="mono">v6blick check</span>. No browser needed.</span></p>
         <p class="tier"><b>Planned</b><span>The page, literal-address and packet-size checks, in <span class="mono">v6blick page</span>, which drives an installed Chrome.</span></p>
         <div class="checks three">
           <article>
@@ -464,7 +503,7 @@ footer .grid{row-gap:24px}
 
   <section id="how">
     <div class="wrap grid">
-      <div class="num">04</div>
+      <div class="num">05</div>
       <div class="body">
         <h2>How a check works.</h2>
         <p class="intro">Five steps, once, from the command line. No hosted service, no account, no test servers to deploy.</p>
@@ -485,7 +524,7 @@ footer .grid{row-gap:24px}
 
   <section id="compare">
     <div class="wrap grid">
-      <div class="num">05</div>
+      <div class="num">06</div>
       <div class="body">
         <h2>How it differs from existing tools.</h2>
         <p class="intro">The idea is not new. What is missing is a tool you run yourself, against a local build or a live URL, that covers the whole page.</p>
@@ -518,45 +557,51 @@ footer .grid{row-gap:24px}
 
   <section id="run">
     <div class="wrap grid">
-      <div class="num">06</div>
+      <div class="num">07</div>
       <div class="body">
         <h2>Run it yourself.</h2>
-        <p class="intro">One binary, run locally or in CI. The page test also needs Chrome or Chromium installed.</p>
+        <p class="intro">One binary, run locally or in CI. Build it from source with a stable <a href="https://rustup.rs">Rust toolchain</a>; ready-built binaries come with the packaging phase.</p>
         <div class="run two">
+          <article class="wide">
+            <h3>Install with cargo</h3>
+            <p>Builds the latest source and puts the <span class="mono">v6blick</span> binary in <span class="mono">~/.cargo/bin</span>.</p>
+<pre tabindex="0">cargo install --git https://github.com/cschweda/v6blick
+v6blick doctor</pre>
+          </article>
           <article>
             <h3>Check a host</h3>
-            <p>Being built. DNS and connection checks over each address family, and a comparison of the two. No browser.</p>
-<pre tabindex="0">v6blick check example.org</pre>
+            <p>Works today. DNS and connection checks over each address family, and a comparison of the two. No browser.</p>
+<pre tabindex="0">v6blick check metaincognita.com</pre>
           </article>
           <article>
             <h3>Check this machine</h3>
-            <p>Being built. Whether this machine has working IPv6, and whether a Chrome or Chromium is found.</p>
+            <p>Works today. Whether this machine has working IPv6, and whether a Chrome or Chromium is found.</p>
 <pre tabindex="0">v6blick doctor</pre>
           </article>
           <article>
             <h3>In a pull request</h3>
-            <p>Being built. One JSON document, and an exit code that follows severity.</p>
+            <p>Works today. One JSON document, and an exit code that follows severity.</p>
 <pre tabindex="0">- run: v6blick check preview.example.org --json</pre>
           </article>
           <article>
             <h3>A build on your own machine</h3>
-            <p>Being built. Private and loopback addresses are refused unless you permit them.</p>
-<pre tabindex="0">v6blick check localhost --allow-private</pre>
+            <p>Works today. Private and loopback addresses are refused unless you permit them.</p>
+<pre tabindex="0">v6blick check http://localhost:8080/ --allow-private</pre>
           </article>
           <article>
             <h3>A whole page</h3>
             <p>Planned. All three networks in one run, or one of them.</p>
-<pre tabindex="0">v6blick page https://example.org
-v6blick page https://example.org --mode v6only</pre>
+<pre tabindex="0">v6blick page https://metaincognita.com
+v6blick page https://metaincognita.com --mode v6only</pre>
           </article>
           <article>
             <h3>A report to hand on</h3>
             <p>Planned. One self-contained HTML file, or many pages from a list.</p>
-<pre tabindex="0">v6blick page https://example.org --html report.html
+<pre tabindex="0">v6blick page https://metaincognita.com --html report.html
 v6blick page --urls urls.txt</pre>
           </article>
         </div>
-        <p class="status"><b>In design</b><span>Nothing is released yet. The <a href="https://github.com/cschweda/v6blick/blob/main/DESIGN.md">design</a> is written, and Phase 0 (<span class="mono">check</span> and <span class="mono">doctor</span>) is being built. The <a href="https://github.com/cschweda/v6blick#build-phases">README</a> lists the phases and what each one delivers.</span></p>
+        <p class="status"><b>Early days</b><span>Phase 0 works: <span class="mono">check</span> and <span class="mono">doctor</span>, ten checks, text and JSON output. There is no release yet, and the whole-page test is not built. The <a href="https://github.com/cschweda/v6blick#build-phases">README</a> lists the phases and what each one delivers; the <a href="https://github.com/cschweda/v6blick/blob/main/DESIGN.md">design</a> has the rest.</span></p>
         <p class="status"><b>Polite by design</b><span>Bounded concurrency, a timeout on every step, at most one retry, plain GET requests with a <span class="mono">User-Agent</span> that names v6blick, and no crawling beyond what was asked for. Test your own sites, or sites you have permission to test.</span></p>
       </div>
     </div>

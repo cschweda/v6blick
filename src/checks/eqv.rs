@@ -103,6 +103,7 @@ fn same_body(a: &ServedBody, b: &ServedBody, thresholds: &Thresholds) -> bool {
 pub fn check(obs: &Observation, thresholds: &Thresholds) -> Vec<Finding> {
     let mut findings = Vec::new();
     let mut compared_pages: Vec<String> = Vec::new();
+    let mut differing_urls: Vec<String> = Vec::new();
     for (scheme, port) in urls(obs) {
         let of = |family: Family| -> Vec<&AddressProbe> {
             obs.probes_of(family)
@@ -154,9 +155,21 @@ pub fn check(obs: &Observation, thresholds: &Thresholds) -> Vec<Finding> {
         let agree = answers6
             .iter()
             .any(|a6| answers4.iter().any(|a4| same_answer(a4, a6)));
+        // http:// usually redirects to the https:// address. When that
+        // one already has a finding, the same fault is not told twice.
+        let through_reported = v4.iter().any(|p| {
+            p.exchanges
+                .iter()
+                .skip(1)
+                .any(|e| differing_urls.contains(&e.url))
+        });
+        if through_reported {
+            continue;
+        }
         let mut answers_differ = false;
         if !answers4.is_empty() && !answers6.is_empty() && !agree {
             answers_differ = true;
+            differing_urls.push(url.clone());
             let (a4, a6) = (&answers4[0], &answers6[0]);
             let summary = if a4.status != a6.status {
                 format!(
@@ -365,6 +378,54 @@ mod tests {
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    #[test]
+    fn a_fault_behind_a_redirect_from_http_is_told_once() {
+        let mut obs = healthy();
+        let (https, shop) = ("https://www.example.org/", "https://shop.example.org/");
+        let lost = || Exchange {
+            url: shop.to_string(),
+            address: None,
+            outcome: ExchangeOutcome::Failed {
+                stage: "resolve".to_string(),
+                message: "shop.example.org has no IPv6 address".to_string(),
+            },
+        };
+        for address in [V4, V6] {
+            set_first(
+                &mut obs,
+                address,
+                Scheme::Https,
+                response(302, Some(shop), ""),
+            );
+            set_first(
+                &mut obs,
+                address,
+                Scheme::Http,
+                response(301, Some(https), ""),
+            );
+            at(&mut obs, address, Scheme::Http).exchanges.push(exchange(
+                https,
+                address,
+                response(302, Some(shop), ""),
+            ));
+        }
+        for scheme in [Scheme::Https, Scheme::Http] {
+            at(&mut obs, V4, scheme).exchanges.push(exchange(
+                shop,
+                "192.0.2.99",
+                response(200, None, "shop page"),
+            ));
+            at(&mut obs, V6, scheme).exchanges.push(lost());
+        }
+        let findings = run(&obs);
+        assert_eq!(ids(&findings), ["EQV-02"]);
+        assert!(
+            findings[0]
+                .summary
+                .starts_with("https://www.example.org/ redirects")
+        );
     }
 
     #[test]

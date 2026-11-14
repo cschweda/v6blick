@@ -49,6 +49,77 @@ impl Severity {
             Severity::Info => "info",
         }
     }
+
+    /// What a finding of this severity says about the site, in a line.
+    pub fn meaning(self) -> &'static str {
+        match self {
+            Severity::Critical => "broken now for visitors who use IPv6; fix it first",
+            Severity::Warning => {
+                "wrong or missing for IPv6; visitors without IPv4 are affected, and it can be fixed"
+            }
+            Severity::Notice => "worth a look; it may be harmless, or chance in one measurement",
+            Severity::Info => "for your information; nothing to fix",
+        }
+    }
+}
+
+/// What a check's finding means for visitors, and what to do about it.
+/// The text belongs to the check, not to one finding: it is the same
+/// for every host.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Advice {
+    pub meaning: &'static str,
+    pub fix: &'static str,
+}
+
+/// The advice for a check ID. Every Phase 0 finding can be fixed by
+/// whoever runs the site's DNS or its servers; none depends on a third
+/// party.
+pub fn advice(check_id: &str) -> Advice {
+    let (meaning, fix) = match check_id {
+        "ADR-01" => (
+            "Visitors on an IPv6-only network cannot reach this host directly. Those whose network has a NAT64 translator, as many mobile networks do, still can; those without one cannot.",
+            "Publish an AAAA record for the host. Most hosting providers and CDNs offer IPv6 as a setting; if yours has none for this name, put the name behind a service that does.",
+        ),
+        "ADR-02" => (
+            "Clients that prefer IPv6 try this address first and fail. They reach the site only after falling back to IPv4, or not at all.",
+            "Replace the record with the server's public IPv6 address, or remove it.",
+        ),
+        "ADR-03" => (
+            "A resolver that has only IPv6 cannot look this name up at all, whatever addresses the host has.",
+            "Give the nameservers of the zone named here IPv6 addresses (AAAA records, and glue at the parent zone), or move the zone to a DNS host whose nameservers have them.",
+        ),
+        "RCH-01" => (
+            "Every client that can use IPv6 tries this address first. Visitors without IPv4 cannot reach the site; everyone else waits for the fallback to IPv4.",
+            "Make the server listen on this address and let ports 80 and 443 through the firewall over IPv6. Until it does, remove the AAAA record: no record is better than one that does not answer.",
+        ),
+        "RCH-02" => (
+            "Visitors on IPv6 cannot open a secure connection. A browser shows an error, or falls back to IPv4 if it can.",
+            "Check the TLS setup of the IPv6 listener or load balancer: its certificate, its protocol versions, and that port 443 over IPv6 reaches the same service as over IPv4.",
+        ),
+        "RCH-03" => (
+            "The site works over IPv6 and opens more slowly there. Browsers that race the two families will mostly end up on IPv4.",
+            "Look at the route to the IPv6 address: a tunnel, a distant data centre, or a CDN with no IPv6 presence nearby. One measurement can be chance, so run the check again first.",
+        ),
+        "RCH-04" => (
+            "A client without fast fallback waits this long before the page starts to load.",
+            "Fix or remove the AAAA record that does not answer. A firewall that silently drops IPv6 packets causes the wait; one that rejects them ends it at once.",
+        ),
+        "EQV-01" => (
+            "Visitors on IPv6 are shown another certificate. If it is expired or for another name, they get a security warning that IPv4 visitors never see.",
+            "Install the same certificate on every server or load balancer behind the AAAA records, and make sure renewals reach them too.",
+        ),
+        "EQV-02" => (
+            "Visitors on IPv6 get a different answer than visitors on IPv4: another page, an error, or a redirect that leads nowhere for them.",
+            "Make the IPv6 side serve the same configuration as the IPv4 side. Where a redirect leads to a host with no IPv6 address, give that host an AAAA record, or redirect to a name that has one.",
+        ),
+        "EQV-03" => (
+            "Visitors on IPv6 may be shown a different page. A page whose content changes on every load can cause this by chance.",
+            "Compare the two responses. If they really differ, the servers behind the AAAA records run another version or configuration of the site.",
+        ),
+        _ => ("", ""),
+    };
+    Advice { meaning, fix }
 }
 
 /// Where the line is drawn for the checks that measure. Open question 4
@@ -198,6 +269,11 @@ pub struct Finding {
     pub name: String,
     /// One line for people.
     pub summary: String,
+    /// What this means for visitors. The same for every finding of the
+    /// check.
+    pub meaning: String,
+    /// What to do about it.
+    pub fix: String,
     pub evidence: Evidence,
 }
 
@@ -214,6 +290,8 @@ impl Finding {
             severity,
             name: obs.host.clone(),
             summary,
+            meaning: advice(check_id).meaning.to_string(),
+            fix: advice(check_id).fix.to_string(),
             evidence,
         }
     }
@@ -228,4 +306,38 @@ pub fn run_all(obs: &Observation, thresholds: &Thresholds) -> Vec<Finding> {
     findings.extend(eqv::check(obs, thresholds));
     findings.sort_by(|a, b| (a.severity, &a.check_id).cmp(&(b.severity, &b.check_id)));
     findings
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_check_says_what_it_means_and_how_to_fix_it() {
+        for id in [
+            "ADR-01", "ADR-02", "ADR-03", "RCH-01", "RCH-02", "RCH-03", "RCH-04", "EQV-01",
+            "EQV-02", "EQV-03",
+        ] {
+            let advice = advice(id);
+            assert!(advice.meaning.ends_with('.'), "{id}");
+            assert!(advice.fix.ends_with('.'), "{id}");
+        }
+        for severity in Severity::ALL {
+            assert!(!severity.meaning().is_empty());
+        }
+    }
+
+    #[test]
+    fn a_finding_carries_its_advice() {
+        let obs = testkit::healthy();
+        let finding = Finding::new(
+            "RCH-01",
+            Severity::Critical,
+            &obs,
+            String::new(),
+            Evidence::NoAaaa { ipv4: vec![] },
+        );
+        assert!(finding.meaning.contains("tries this address first"));
+        assert!(finding.fix.contains("remove the AAAA record"));
+    }
 }

@@ -98,7 +98,21 @@ async fn a_different_ipv6_listener_is_eqv_01_and_eqv_02() {
     let out = report(&target, outcome, false, false);
     assert_eq!(out.exit_code, exit::FINDINGS);
     // Each finding shows its check ID, the host and the evidence.
-    assert!(out.stdout.contains("WARNING (2)"), "{}", out.stdout);
+    assert!(
+        out.stdout
+            .contains("WARNING (2)  wrong or missing for IPv6"),
+        "{}",
+        out.stdout
+    );
+    // And what it means and how to fix it.
+    assert!(
+        out.stdout
+            .contains("Means: Visitors on IPv6 are shown another certificate.")
+    );
+    assert!(
+        out.stdout
+            .contains("Fix:   Install the same certificate on every server")
+    );
     assert!(out.stdout.contains("EQV-01  localhost."));
     assert!(
         out.stdout
@@ -130,13 +144,25 @@ async fn a_dead_ipv6_listener_is_rch_01() {
 
     let out = report(&target, outcome, false, false);
     assert_eq!(out.exit_code, exit::CRITICAL);
-    assert!(out.stdout.contains("CRITICAL (1)"), "{}", out.stdout);
+    assert!(
+        out.stdout
+            .contains("CRITICAL (1)  broken now for visitors who use IPv6"),
+        "{}",
+        out.stdout
+    );
     assert!(out.stdout.contains("RCH-01  localhost."));
     assert!(
         out.stdout
             .contains("the AAAA record ::1 is published and nothing accepts a connection there")
     );
     assert!(out.stdout.contains(&format!("port {port}: refused after")));
+    // The probe table says it too, with the reason on a line of its own.
+    assert!(
+        out.stdout
+            .contains("IPv6  ::1        refused\n          refused after"),
+        "{}",
+        out.stdout
+    );
 }
 
 #[tokio::test]
@@ -251,6 +277,18 @@ async fn the_json_document_has_a_fixed_shape() {
     assert_eq!(doc["probes"][1]["exchanges"][0]["status"], 301);
     assert_eq!(doc["findings"][0]["check_id"], "EQV-01");
     assert_eq!(doc["findings"][0]["severity"], "warning");
+    assert!(
+        doc["findings"][0]["meaning"]
+            .as_str()
+            .unwrap()
+            .starts_with("Visitors on IPv6")
+    );
+    assert!(
+        doc["findings"][0]["fix"]
+            .as_str()
+            .unwrap()
+            .starts_with("Install the same")
+    );
     assert_eq!(
         doc["findings"][0]["evidence"]["kind"],
         "certificate_mismatch"
@@ -296,7 +334,23 @@ fn a_recorded_run_of_a_differing_site_gives_the_same_findings_again() {
     assert_eq!(found, ["EQV-01", "EQV-02"]);
 }
 
-/// Writes the two fixtures above again. The first needs the network.
+#[test]
+fn a_recorded_run_of_a_site_that_redirects_to_an_ipv4_only_name_is_eqv_02() {
+    // www.metaincognita.com has IPv6 addresses and redirects to
+    // metaincognita.com, which has none. Recorded on 2026-11-14.
+    let (saved, again) = replay("www.metaincognita.com.report.json");
+    assert_eq!(saved, again);
+    let findings = again["findings"].as_array().unwrap();
+    assert_eq!(findings.len(), 1);
+    assert_eq!(findings[0]["check_id"], "EQV-02");
+    assert_eq!(
+        findings[0]["summary"],
+        "https://www.metaincognita.com/ redirects to https://metaincognita.com/, which works over IPv4 and fails over IPv6"
+    );
+    assert_eq!(again["exit_code"], 1);
+}
+
+/// Writes the fixtures above again. The first two need the network.
 /// Run with `cargo test --test check record_fixtures -- --ignored`.
 #[tokio::test]
 #[ignore = "uses the live network and rewrites tests/fixtures"]
@@ -305,6 +359,12 @@ async fn record_fixtures() {
     let outcome = observe("zoneblick.com", live, ProbeConfig::default()).await;
     let out = report("zoneblick.com", outcome, true, false);
     std::fs::write(fixture("zoneblick.com.report.json"), out.stdout).unwrap();
+
+    let live = Arc::new(Client::live(NetConfig::default()));
+    let host = "www.metaincognita.com";
+    let outcome = observe(host, live, ProbeConfig::default()).await;
+    let out = report(host, outcome, true, false);
+    std::fs::write(fixture("www.metaincognita.com.report.json"), out.stdout).unwrap();
 
     let port = different_ipv6().await;
     let (target, outcome) = check_local("https", port).await;

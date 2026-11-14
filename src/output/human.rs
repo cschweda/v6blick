@@ -157,21 +157,25 @@ fn walks(w: &mut String, st: &Style, report: &Report) {
     let _ = writeln!(w);
 }
 
-/// What one probe came to, in a few words per stage.
-fn probe_line(probe: &AddressProbe) -> (String, bool) {
+/// What one probe came to, in a few words per stage, and whether all of
+/// it worked. A second line, when there is one, says what went wrong.
+fn probe_line(probe: &AddressProbe) -> (String, Option<String>) {
     let mut parts = Vec::new();
-    let mut ok = true;
+    let mut wrong = None;
     match &probe.connect {
-        Connect::Connected { ms } => parts.push(format!("connected in {ms} ms")),
-        other => {
-            ok = false;
-            parts.push(other.label());
-        }
+        Connect::Connected { ms } => parts.push(format!("{ms} ms")),
+        Connect::Refused { .. } => parts.push("refused".to_string()),
+        Connect::TimedOut { .. } => parts.push("no answer".to_string()),
+        Connect::Failed { .. } => parts.push("failed".to_string()),
+        Connect::NotProbed { .. } => parts.push("not probed".to_string()),
+    }
+    if probe.connect.connected_ms().is_none() {
+        wrong = Some(probe.connect.label());
     }
     match &probe.tls {
         Some(Tls::Ok { certificate, .. }) => parts.push(format!(
-            "TLS ok, certificate {}{}",
-            &certificate.sha256[..certificate.sha256.len().min(12)],
+            "TLS ok {}{}",
+            short(&certificate.sha256),
             if certificate.covers_host {
                 ""
             } else {
@@ -179,30 +183,33 @@ fn probe_line(probe: &AddressProbe) -> (String, bool) {
             }
         )),
         Some(Tls::Failed { message }) => {
-            ok = false;
-            parts.push(format!("TLS failed: {message}"));
+            parts.push("TLS failed".to_string());
+            wrong = Some(message.clone());
         }
         None => {}
     }
+    // The statuses in order, then the size and place of the last page.
     let mut chain = Vec::new();
     for exchange in &probe.exchanges {
         match &exchange.outcome {
-            ExchangeOutcome::Response(r) => match &r.location {
-                Some(to) if (300..400).contains(&r.status) => {
-                    chain.push(format!("{} to {to}", r.status))
-                }
-                _ => chain.push(format!("{}, {} bytes", r.status, r.body_bytes)),
-            },
+            ExchangeOutcome::Response(r) => chain.push(r.status.to_string()),
             ExchangeOutcome::Failed { message, .. } => {
-                ok = false;
-                chain.push(format!("failed: {message}"));
+                chain.push("failed".to_string());
+                wrong = Some(message.clone());
             }
         }
     }
     if !chain.is_empty() {
-        parts.push(chain.join(" -> "));
+        let mut text = chain.join(" -> ");
+        if let Some((last, response)) = probe.final_response() {
+            let _ = write!(text, ", {} bytes", response.body_bytes);
+            if probe.exchanges.len() > 1 {
+                let _ = write!(text, ", at {}", last.url);
+            }
+        }
+        parts.push(text);
     }
-    (parts.join("; "), ok)
+    (parts.join("  "), wrong)
 }
 
 fn probes(w: &mut String, st: &Style, report: &Report) {
@@ -222,16 +229,49 @@ fn probes(w: &mut String, st: &Style, report: &Report) {
             last = Some((probe.scheme, probe.port));
             let _ = writeln!(w, "  {} on port {}", probe.scheme.as_str(), probe.port);
         }
-        let (line, ok) = probe_line(probe);
+        let (line, wrong) = probe_line(probe);
         let _ = writeln!(
             w,
             "    {}  {:<width$}  {}",
             probe.family.as_str(),
             probe.address.to_string(),
-            if ok { line } else { st.bad(&line) },
+            if wrong.is_some() { st.bad(&line) } else { line },
         );
+        if let Some(wrong) = wrong {
+            let _ = writeln!(w, "          {}", st.dim(&wrong));
+        }
     }
     let _ = writeln!(w);
+}
+
+/// Break text into lines of at most `width` characters, at spaces.
+fn wrap(text: &str, width: usize) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    for word in text.split_whitespace() {
+        match lines.last_mut() {
+            Some(line) if line.len() + 1 + word.len() <= width => {
+                line.push(' ');
+                line.push_str(word);
+            }
+            _ => lines.push(word.to_string()),
+        }
+    }
+    lines
+}
+
+/// A labelled paragraph under a finding, wrapped, with the lines after
+/// the first set in under the text.
+fn advice(w: &mut String, st: &Style, label: &str, text: &str) {
+    if text.is_empty() {
+        return;
+    }
+    for (i, line) in wrap(text, 76).iter().enumerate() {
+        if i == 0 {
+            let _ = writeln!(w, "      {} {line}", st.bold(label));
+        } else {
+            let _ = writeln!(w, "      {:pad$} {line}", "", pad = label.len());
+        }
+    }
 }
 
 fn findings(w: &mut String, st: &Style, report: &Report) {
@@ -251,13 +291,20 @@ fn findings(w: &mut String, st: &Style, report: &Report) {
             continue;
         }
         let heading = format!("{} ({})", severity.as_str().to_uppercase(), group.len());
-        let _ = writeln!(w, "  {}", st.severity(severity, &heading));
+        let _ = writeln!(
+            w,
+            "  {}  {}",
+            st.severity(severity, &heading),
+            st.dim(severity.meaning())
+        );
         for finding in group {
             let _ = writeln!(w, "    {}  {}", st.bold(&finding.check_id), finding.name);
             let _ = writeln!(w, "      {}", finding.summary);
             for line in evidence_lines(&finding.evidence) {
                 let _ = writeln!(w, "      {}", st.dim(&line));
             }
+            advice(w, st, "Means:", &finding.meaning);
+            advice(w, st, "Fix:  ", &finding.fix);
         }
         let _ = writeln!(w);
     }
@@ -280,32 +327,30 @@ fn certificate_line(family: &str, c: &ServedCertificate) -> String {
     )
 }
 
-fn answer_line(family: &str, a: &Answer) -> String {
-    let mut line = format!("{family} {}: {}", a.address, a.status);
+/// One line for the first response, and one for where it led.
+fn answer_lines(family: &str, a: &Answer) -> Vec<String> {
+    let mut first = format!("{family} {}: {}", a.address, a.status);
     if let Some(to) = &a.location {
-        let _ = write!(line, " to {to}");
+        let _ = write!(first, " to {to}");
     }
-    match a.ended.as_str() {
-        "page" => {
-            if a.final_url.is_some() && a.location.is_some() {
-                let _ = write!(
-                    line,
-                    ", ends at {} with {}",
-                    a.final_url.as_deref().unwrap_or_default(),
-                    a.final_status.unwrap_or_default()
-                );
-            }
-        }
+    let then = match a.ended.as_str() {
+        "page" if a.location.is_some() => Some(format!(
+            "ends at {} with {}",
+            a.final_url.as_deref().unwrap_or_default(),
+            a.final_status.unwrap_or_default()
+        )),
+        "page" => None,
         "failed" => {
-            let _ = write!(
-                line,
-                ", then fails ({})",
-                a.failure.as_deref().unwrap_or("no response")
-            );
+            // The stage is for the JSON; the message says it in words.
+            let why = a.failure.as_deref().unwrap_or("no response");
+            let why = why.split_once(": ").map_or(why, |(_, message)| message);
+            Some(format!("fails: {why}"))
         }
-        _ => line.push_str(", and the redirects do not end"),
-    }
-    line
+        _ => Some("the redirects do not end".to_string()),
+    };
+    let mut lines = vec![first];
+    lines.extend(then.map(|t| format!("  {t}")));
+    lines
 }
 
 fn body_line(family: &str, b: &ServedBody) -> String {
@@ -373,8 +418,8 @@ pub fn evidence_lines(evidence: &Evidence) -> Vec<String> {
             .collect(),
         Evidence::ResponseMismatch { ipv4, ipv6, .. } => ipv4
             .iter()
-            .map(|a| answer_line("IPv4", a))
-            .chain(ipv6.iter().map(|a| answer_line("IPv6", a)))
+            .flat_map(|a| answer_lines("IPv4", a))
+            .chain(ipv6.iter().flat_map(|a| answer_lines("IPv6", a)))
             .collect(),
         Evidence::BodyMismatch { ipv4, ipv6, .. } => ipv4
             .iter()

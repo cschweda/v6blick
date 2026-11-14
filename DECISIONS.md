@@ -28,3 +28,46 @@ Choices made during implementation where `DESIGN.md` was silent or loose. One li
 - The IPv6-only walk is the same resolver with IPv4 switched off. It is run for the host and, when the host is an alias, for the name its addresses belong to. Each walk starts with an empty cache so that its path is complete.
 - A walk that ends in "no such name" or "no such data" counts as reached: the zone's servers answered over IPv6.
 - Names in observations and output are lowercase and fully qualified, with a trailing dot, as in zoneblick.
+- With `--allow-private`, a name the public DNS does not know (`localhost`, a name in a hosts file) is looked up with the operating system's resolver. Such a name has no delegation, so no IPv6-only walk is made, and ADR-02 does not judge its addresses.
+- After a security review of the copied resolver: one run sends at most 600 DNS queries, and only the first level of a glueless delegation tries more than one nameserver name. zoneblick's copy has neither limit.
+
+### Probing
+
+- The HTTP request is written by hand on `tokio` and `tokio-rustls`: HTTP/1.1, `Connection: close`, `Accept-Encoding: identity`. No HTTP client crate is used, because the probe must choose the address and keep the certificate and the timings.
+- Certificates are accepted without checking them against trusted authorities, as zoneblick's certificate probe does. The fingerprint, names, expiry and whether a name matches the host are recorded (agreed with the author).
+- At most four addresses of each family are probed, four probes at a time. A probe is never retried.
+- A bare host is probed as `https://host/` and `http://host/`; a full address as given. An IP address in place of a host name is a failed run.
+- Timeouts: 5 s to connect, 5 s for the TLS handshake, 10 s for the request and the whole response. At most 1 MiB of a body is read.
+- At most five redirects are followed. They stay in the address family the probe started in: the same address for the same host, and for another host an address of that family, found by the same resolver. A redirect to a host with no such address ends the chain and is recorded.
+- Private, loopback and link-local destinations are refused unless `--allow-private` is given, also as the target of a redirect. Unspecified, multicast, documentation, IPv4-mapped and other special addresses are refused always.
+- The request to an address is an exchange only when a request was sent. A connection or handshake that failed is told by `connect` and `tls`.
+
+### Checks
+
+- A difference between the families is reported only when no IPv6 address agrees with any IPv4 address, since the servers behind several addresses need not be identical.
+- ADR-01 needs a definite "no record" for AAAA; a failed lookup is not one.
+- ADR-02's unusable ranges: loopback, unspecified, unique-local, link-local, multicast, documentation, IPv4-mapped, IPv4-compatible, 6to4, Teredo, the 6bone, site-local, the well-known NAT64 prefix and the discard prefix.
+- ADR-03 is reported once for each zone the walk stops at, also when the host and its alias target both stop there.
+- RCH-01 is per IPv6 address, and fires when every port that was tried failed to open. An address that was not contacted says nothing.
+- RCH-02 needs a successful handshake on the same port over IPv4.
+- RCH-03: the fastest address of each family is compared on each port, and fires when IPv6 takes more than 250 ms longer, the delay after which a browser that races the families (RFC 8305) starts its IPv4 attempt. One measurement, no averaging; the widest gap is reported (agreed with the author).
+- RCH-04: a failing IPv6 attempt that takes more than 1 s to fail, while an IPv4 address on that port works. A refusal is quiet; a silent drop is reported (agreed with the author).
+- EQV-02 compares the first response (status and `Location`) and where the redirects end. A redirect that works over IPv4 and cannot be followed over IPv6 is EQV-02.
+- A fault behind the redirect from `http://` to `https://` is reported once, for the `https://` address.
+- EQV-03's "normalised hash" is a hash of the sequence of HTML tag names, without text, attributes, comments, or what is inside script and style elements. It fires when that differs, or when the sizes differ by more than a fifth and by more than 256 bytes. It is not run where EQV-02 fired (agreed with the author).
+- Every finding carries what it means for visitors and how to fix it, in the text output and as `meaning` and `fix` in the JSON; each severity heading says in a line what the severity means (asked for by the author).
+
+### Output and commands
+
+- The `--json` document is the observation followed by the findings, the summary and the exit code. A saved document can be read back as an observation and checked again.
+- With `--json`, a failed run prints a short JSON error document on stdout, as zoneblick does.
+- A command-line usage error exits `3`, not clap's default `2`.
+- `check` exits `3` when this machine has no working IPv6, no working IPv4, or no network, before anything is said about the host.
+- `doctor` exits `0` when IPv4 and IPv6 both work and `3` otherwise. A missing browser does not change the code in Phase 0, because `check` does not need one.
+- `doctor` looks for Chrome or Chromium in the usual places and on the search path. It never starts it.
+- Test fixtures: recorded runs are saved `--json` documents, written by an ignored test, not by a command-line option.
+
+### Project site
+
+- The site is one static page in `docs/`, served by GitHub Pages from `main`, at https://cschweda.github.io/v6blick/ until the design's v6blick.zoneblick.com is set up (asked for by the author).
+- Examples, screenshots and the social card use the author's own sites, metaincognita.com and zoneblick.com, with real output (asked for by the author).

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "host": "zoneblick.com.",
   "target": "zoneblick.com",
-  "started_at_unix": 1794677346,
+  "started_at_unix": 1794677735,
   "vantage": {
     "ipv4": true,
     "ipv6": true
@@ -195,11 +195,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 17
+        "ms": 15
       },
       "tls": {
         "result": "ok",
-        "ms": 33,
+        "ms": 24,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -230,11 +230,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 21
+        "ms": 16
       },
       "tls": {
         "result": "ok",
-        "ms": 31,
+        "ms": 26,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -265,11 +265,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 20
+        "ms": 15
       },
       "tls": {
         "result": "ok",
-        "ms": 26,
+        "ms": 38,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -300,11 +300,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 21
+        "ms": 16
       },
       "tls": {
         "result": "ok",
-        "ms": 26,
+        "ms": 25,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -335,11 +335,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 24
+        "ms": 21
       },
       "tls": {
         "result": "ok",
-        "ms": 20,
+        "ms": 14,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -370,11 +370,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 16
+        "ms": 26
       },
       "tls": {
         "result": "ok",
-        "ms": 25,
+        "ms": 23,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -405,11 +405,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 18
+        "ms": 23
       },
       "tls": {
         "result": "ok",
-        "ms": 24,
+        "ms": 22,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -440,11 +440,11 @@
       "scheme": "https",
       "connect": {
         "result": "connected",
-        "ms": 15
+        "ms": 22
       },
       "tls": {
         "result": "ok",
-        "ms": 22,
+        "ms": 19,
         "certificate": {
           "sha256": "21b0dc5ca6cb706432940a09ca00a6be5c4ca2a02649b657efb2f875ec8b3868",
           "names": [
@@ -475,7 +475,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 13
+        "ms": 18
       },
       "exchanges": [
         {
@@ -508,7 +508,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 24
+        "ms": 19
       },
       "exchanges": [
         {
@@ -541,7 +541,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 23
+        "ms": 21
       },
       "exchanges": [
         {
@@ -574,7 +574,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 24
+        "ms": 19
       },
       "exchanges": [
         {
@@ -607,7 +607,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 14
+        "ms": 9
       },
       "exchanges": [
         {
@@ -640,7 +640,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 14
+        "ms": 8
       },
       "exchanges": [
         {
@@ -706,7 +706,7 @@
       "scheme": "http",
       "connect": {
         "result": "connected",
-        "ms": 12
+        "ms": 14
       },
       "exchanges": [
         {
